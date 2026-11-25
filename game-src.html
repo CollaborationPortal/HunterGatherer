@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hunter Gatherer History Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --soil: #3b2a1a;
+  --bark: #5c3d22;
+  --saddle: #8b5a2b;
+  --wheat: #e8c97a;
+  --cream: #f6ecd7;
+  --parchment: #f3e6c8;
+  --sage: #6b8f71;
+  --sage-deep: #3f5e46;
+  --rust: #b5522a;
+  --ink: #2a1d12;
+  --card: rgba(246, 236, 215, 0.94);
+  --shadow: 0 12px 40px rgba(42, 29, 18, 0.28);
+  --tile-a: #f7f1e4;
+  --tile-b: #d9d0bc;
+  --tile-dark: #9e9480;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  color: var(--ink);
+  background: #1d150e center/cover fixed no-repeat;
+  background-image: linear-gradient(180deg, rgba(29,21,14,.5), rgba(29,21,14,.78)), var(--bg);
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+button:hover { transform: translateY(-1px); filter: brightness(1.05); }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: .45; cursor: not-allowed; transform: none; filter: none; }
+.btn-primary {
+  background: linear-gradient(180deg, #d9783a, var(--rust));
+  color: #fff8ef;
+  padding: .85rem 1.4rem;
+  box-shadow: 0 8px 0 #7a3418;
+}
+.btn-secondary {
+  background: linear-gradient(180deg, #8faf87, var(--sage-deep));
+  color: #f4fff4;
+  padding: .75rem 1.2rem;
+  box-shadow: 0 6px 0 #2a4030;
+}
+.btn-ghost {
+  background: rgba(255,248,235,.18);
+  color: var(--cream);
+  border: 2px solid rgba(246,236,215,.45);
+  padding: .7rem 1.1rem;
+}
+.screen { display: none; min-height: 100vh; padding: 1.25rem; }
+.screen.active { display: block; animation: rise .45s ease; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.panel {
+  background: var(--card);
+  border: 3px solid rgba(92,61,34,.35);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+h1, h2, h3 { font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif; margin: 0 0 .5rem; }
+.muted { color: #6d563d; }
+.row-actions { display: flex; gap: .75rem; flex-wrap: wrap; justify-content: center; }
+
+/* Title */
+#title-screen {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#title-screen.active { display: flex; }
+.title-wrap { max-width: 820px; width: 100%; }
+.title-hero {
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 4px solid rgba(246,236,215,.55);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.2rem;
+  max-height: min(42vh, 360px);
+}
+.title-hero img { width: 100%; height: min(42vh, 360px); display: block; object-fit: cover; object-position: center 40%; }
+.title-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, transparent 20%, rgba(28,18,10,.82));
+  color: #fff6e8;
+}
+.title-overlay h1 {
+  font-size: clamp(2rem, 6.5vw, 3.3rem);
+  text-shadow: 0 4px 18px rgba(0,0,0,.55);
+  line-height: 1.05;
+}
+.title-overlay p { margin: .35rem 0 0; font-size: 1.05rem; max-width: 34rem; }
+.script-box { text-align: left; margin: 1rem 0 1.25rem; }
+.script-box p { margin: .4rem 0; line-height: 1.45; }
+
+/* Setup */
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.15rem 1.25rem;
+  margin-top: 1rem;
+}
+@media (max-width: 820px) {
+  .setup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.char-card {
+  background: #fff9ec;
+  border: 3px solid transparent;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  box-shadow: 0 6px 16px rgba(42,29,18,.12);
+  color: inherit;
+  transition: border-color .15s, transform .15s;
+}
+.char-card:hover { transform: translateY(-3px); }
+.char-card.selected { border-color: var(--rust); box-shadow: 0 0 0 3px rgba(181,82,42,.25); }
+.char-card img.hero {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+  background: #efe2c4;
+}
+.char-card .body { padding: .65rem .85rem .9rem; }
+.char-card .body h3 { font-size: 1.15rem; }
+.char-card .body p { margin: .25rem 0; font-size: .86rem; line-height: 1.35; }
+.look-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: .65rem .75rem 0;
+  background: #fff9ec;
+}
+.look-btn {
+  width: 56px; height: 56px; padding: 0; border-radius: 12px;
+  border: 3px solid transparent; overflow: hidden;
+  box-shadow: 0 2px 6px rgba(42,29,18,.15);
+  background: #efe2c4;
+}
+.look-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.look-btn.active { border-color: var(--rust); }
+.look-btn:disabled { opacity: .35; }
+.badge {
+  display: inline-block;
+  background: var(--wheat);
+  color: var(--bark);
+  border-radius: 999px;
+  padding: .15rem .55rem;
+  font-size: .75rem;
+  font-weight: 800;
+}
+.player-setup { margin-top: 1rem; }
+.player-chip {
+  display: inline-flex; align-items: center; gap: .45rem;
+  background: #efe0c0; border-radius: 999px; padding: .35rem .7rem;
+  margin: .2rem; font-weight: 700; font-size: .9rem;
+  border: 3px solid transparent; cursor: pointer; color: inherit;
+}
+.player-chip.editing {
+  border-color: var(--rust);
+  box-shadow: 0 0 0 2px rgba(181,82,42,.2);
+  background: #ffe4c2;
+}
+.player-chip img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+
+/* ===== Play: top seats/turn zone, board in bottom half ===== */
+#play-screen {
+  padding: .65rem;
+}
+#play-screen.active {
+  display: grid;
+  grid-template-columns: minmax(140px, 20vw) minmax(0, 1fr) minmax(140px, 20vw);
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    "seat0 turn seat1"
+    "seat2 board seat3";
+  gap: .55rem;
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+}
+#seat-0 { grid-area: seat0; }
+#seat-1 { grid-area: seat1; }
+#seat-2 { grid-area: seat2; }
+#seat-3 { grid-area: seat3; }
+#turn-dock { grid-area: turn; }
+#path-panel { grid-area: board; }
+.corner {
+  background: var(--card);
+  border: 3px solid rgba(92,61,34,.35);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: .7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 0;
+  overflow: visible;
+}
+.corner.empty {
+  opacity: .45;
+  justify-content: center;
+}
+.corner.active-seat {
+  outline: 3px solid var(--rust);
+  outline-offset: 1px;
+}
+.corner .avatar-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 3 / 4;
+  flex-shrink: 0;
+}
+.corner img.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #efe2c4;
+  border: 2px solid rgba(92,61,34,.25);
+  display: block;
+}
+.corner.active-seat .avatar-wrap {
+  animation: turn-pulse 1.1s ease-in-out infinite;
+  transform-origin: center center;
+}
+@keyframes turn-pulse {
+  0%, 100% { transform: scale(0.97); }
+  50% { transform: scale(1.03); }
+}
+.corner .outcome-burst {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 2px solid rgba(92,61,34,.35);
+  background: #efe2c4;
+  box-shadow: 0 8px 20px rgba(42, 29, 18, .35);
+  z-index: 6;
+  pointer-events: none;
+  transform-origin: center center;
+  animation: outcome-burst .9s ease-out forwards;
+}
+@keyframes outcome-burst {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  35% { transform: scale(1.12) rotate(0deg); opacity: 1; }
+  55% { transform: scale(1) rotate(10deg); opacity: 1; }
+  75% { transform: scale(1) rotate(-8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.corner .seat-role {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin: .45rem 0 .15rem;
+  color: var(--ink);
+}
+.corner .food-count {
+  position: relative;
+  font-weight: 800;
+  font-size: .9rem;
+  color: var(--bark);
+}
+.corner .food-count.swap-flash {
+  animation: food-flash .7s ease;
+}
+@keyframes food-flash {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.25); color: var(--rust); }
+}
+.food-delta {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  margin-bottom: 2px;
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 8;
+  animation: food-delta-rise 1.15s ease-out forwards;
+}
+.food-delta.gain { color: #2f9e44; }
+.food-delta.loss { color: #d6453a; }
+@keyframes food-delta-rise {
+  0% { opacity: 0; transform: translateX(-50%) translateY(6px) scale(.85); }
+  18% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.08); }
+  70% { opacity: 1; transform: translateX(-50%) translateY(-14px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-22px) scale(1); }
+}
+.food-fly {
+  position: fixed;
+  z-index: 60;
+  font-size: 1.6rem;
+  line-height: 1;
+  pointer-events: none;
+  transition: left .75s cubic-bezier(.22,.7,.3,1), top .75s cubic-bezier(.22,.7,.3,1), opacity .75s ease, transform .75s ease;
+  transform: scale(1);
+  opacity: 1;
+}
+.food-fly.going {
+  opacity: .15;
+  transform: scale(.7);
+}
+.corner.won { background: linear-gradient(180deg, #e8f5dc, #fff9ec); }
+
+#turn-dock {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: .35rem .5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 0;
+  overflow: auto;
+}
+#turn-dock .dock-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 640px;
+}
+#turn-dock .dock-hero {
+  width: min(120px, 28%);
+  aspect-ratio: 3/4;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(239, 226, 196, .85);
+}
+#turn-dock .dock-main {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#turn-dock .dock-copy {
+  width: 100%;
+  text-align: center;
+  background: rgba(246, 236, 215, .94);
+  border: 2px solid rgba(92, 61, 34, .28);
+  border-radius: 14px;
+  padding: .65rem .85rem;
+  color: var(--ink);
+}
+#turn-dock .dock-copy h3 {
+  margin: 0 0 .25rem;
+  font-size: clamp(2.2rem, 4.4vw, 2.9rem);
+  color: #2a1d12;
+}
+#turn-dock .dock-copy p {
+  margin: 0 0 .55rem;
+  color: #3b2a1a;
+  font-size: 1.9rem;
+  white-space: pre-line;
+}
+#turn-dock .dock-copy.card-mode h3 {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  letter-spacing: .02em;
+  color: #2a1d12;
+}
+#turn-dock .dock-copy.card-mode p {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  font-size: 2.7rem;
+  color: #2a1d12;
+}
+#turn-dock .dock-dice {
+  width: 88px; height: 88px;
+  margin: .65rem auto 0;
+  border-radius: 12px;
+  background: #fff;
+  border: 3px solid #8b5a2b;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  padding: 12px;
+  gap: 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+#turn-dock .dock-dice .pip {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2a1d12;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.25);
+}
+#turn-dock .dock-dice.dice-tick {
+  animation: dice-tick .12s ease;
+}
+#turn-dock .dock-dice.dice-land {
+  animation: pop .35s ease;
+}
+@keyframes dice-tick {
+  0% { transform: scale(1) rotate(0deg); }
+  40% { transform: scale(1.12) rotate(-8deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+#turn-dock .dock-actions {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: .55rem;
+}
+#turn-dock .dock-actions .btn-primary,
+#turn-dock .dock-actions .btn-secondary {
+  font-size: 1.7rem;
+  padding: .85rem 1.5rem;
+}
+#turn-dock .dock-idle {
+  margin: 0;
+  color: #2a1d12;
+  font-size: 1.9rem;
+  background: rgba(246, 236, 215, .94);
+  border: 2px solid rgba(92, 61, 34, .28);
+  border-radius: 14px;
+  padding: .55rem .9rem;
+}
+
+#path-panel {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.board-map {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #cbb889;
+}
+.board-fit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.board-fit > img.board-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+.token-slot {
+  position: absolute;
+  width: 5.2%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  pointer-events: none;
+  z-index: 3;
+}
+.token-slot.here {
+  outline: 2px solid var(--rust);
+  outline-offset: 1px;
+  border-radius: 10px;
+  background: rgba(255,248,235,.4);
+}
+.token-slot.step-on {
+  outline: 2px solid #d9783a;
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+.token-slot img {
+  width: 70%;
+  height: 70%;
+  max-width: 28px;
+  max-height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  object-fit: cover; object-position: center top;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.28);
+}
+.token-slot img.hop { animation: token-hop .32s ease; }
+@keyframes token-hop {
+  0% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-8px) scale(1.12); }
+  100% { transform: translateY(0) scale(1); }
+}
+.token-slot img.p0 { box-shadow: 0 0 0 2px #b5522a; }
+.token-slot img.p1 { box-shadow: 0 0 0 2px #3f5e46; }
+.token-slot img.p2 { box-shadow: 0 0 0 2px #6fa0c8; }
+.token-slot img.p3 { box-shadow: 0 0 0 2px #8b5a2b; }
+
+@media (max-width: 900px) {
+  #play-screen.active {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas:
+      "seat0 seat1"
+      "turn turn"
+      "board board"
+      "seat2 seat3";
+    height: auto;
+    max-height: none;
+  }
+  #path-panel { min-height: 52vw; }
+  #turn-dock { min-height: 64px; }
+}
+
+/* Modals — turn/roll popups sit at the top */
+.modal-back {
+  position: fixed; inset: 0; background: rgba(20,12,6,.45);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 1rem; padding-top: max(1rem, 4vh); z-index: 40;
+}
+.modal-back.show { display: flex; }
+.modal-back.center-modal { align-items: center; }
+.modal {
+  width: min(460px, 100%);
+  background: var(--cream);
+  border-radius: 20px;
+  border: 3px solid rgba(92,61,34,.35);
+  box-shadow: var(--shadow);
+  padding: 1.2rem 1.25rem;
+  text-align: center;
+}
+.modal.turn-modal {
+  width: min(380px, 100%);
+  padding: .85rem 1rem 1rem;
+}
+.modal img.icon { width: 72px; height: 72px; object-fit: cover; border-radius: 14px; margin: .4rem auto; }
+.modal img.turn-hero {
+  width: min(140px, 42%);
+  aspect-ratio: 3/4;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #efe2c4;
+  border: 3px solid rgba(92,61,34,.3);
+  margin: .35rem auto;
+  display: block;
+}
+.card-title {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  font-size: clamp(1.35rem, 3.5vw, 1.85rem);
+  letter-spacing: .02em;
+  margin: .2rem 0 .35rem;
+  line-height: 1.15;
+}
+.card-body {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  font-size: 1.45rem;
+  line-height: 1.25;
+  margin: .35rem 0 .2rem;
+}
+.dice-face {
+  width: 72px; height: 72px; margin: .6rem auto;
+  border-radius: 14px; background: #fff; border: 3px solid #8b5a2b;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  animation: pop .35s ease;
+}
+.dice-face .pip {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #2a1d12;
+}
+@keyframes pop { from { transform: scale(.6) rotate(-12deg); } to { transform: none; } }
+.choice-btns { display: grid; gap: .55rem; margin-top: .9rem; }
+
+#end-screen .panel { max-width: 640px; margin: 4vh auto; text-align: center; }
+.winner-list { display: grid; gap: .6rem; margin: 1rem 0; }
+.winner-list .player-row {
+  display: grid; grid-template-columns: 40px 1fr auto; gap: .5rem; align-items: center;
+  background: #fff7e6; border-radius: 12px; padding: .4rem .5rem; text-align: left;
+}
+.winner-list .player-row img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; }
+.won-tag { color: var(--sage-deep); font-weight: 800; font-size: .75rem; }
+
+.app-toggles {
+  position: fixed;
+  top: .7rem;
+  right: .7rem;
+  z-index: 200;
+  display: flex;
+  gap: .45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100vw - 1.4rem);
+}
+.app-toggles button {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  font-size: .95rem;
+  font-weight: 800;
+  padding: .55rem .95rem;
+  border-radius: 999px;
+  border: 2px solid rgba(92,61,34,.35);
+  background: rgba(246, 236, 215, 0.94);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(42, 29, 18, .28);
+}
+.app-toggles button[aria-pressed="true"] {
+  background: linear-gradient(180deg, #8faf87, var(--sage-deep));
+  color: #f4fff4;
+  border-color: rgba(42, 64, 48, .45);
+}
+</style>
+</head>
+<body>
+<div class="app-toggles">
+  <button type="button" id="btn-music" aria-pressed="false" aria-label="Toggle music">Music: Off</button>
+</div>
+<div id="title-screen" class="screen active">
+  <div class="title-wrap">
+    <div class="title-hero">
+      <img id="title-bg" alt="Hunter-gatherer camp" />
+      <div class="title-overlay">
+        <h1>Hunter Gatherer</h1>
+        <p>Roll along the trail, then draw an experience card — most food wins.</p>
+      </div>
+    </div>
+    <div class="panel script-box">
+      <h2>Hunting and Gathering</h2>
+      <p>Long before farms and cities, people lived by hunting animals and gathering wild plants. Food was everything.</p>
+      <p class="muted">On your turn, roll and move. Then see what happens. When everyone reaches END, the forager with the most food wins!</p>
+      <div class="row-actions" style="margin-top:1rem">
+        <button class="btn-primary" id="btn-start">Start the Hunt</button>
+        <button class="btn-ghost" id="btn-how" style="color:var(--ink);border-color:rgba(92,61,34,.3);background:#efe2c4">How to Play</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="setup-screen" class="screen">
+  <div class="panel" style="max-width:1280px;margin:0 auto">
+    <h2>Choose Your Foragers</h2>
+    <p class="muted">Pick 1–4 players. Choose a role and appearance, then press <strong>Choose</strong>. The last forager can skip Choose and press <strong>Play Game</strong>. Everyone starts with 2 food. The computer is the banker.</p>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin:.8rem 0">
+      <label for="player-count"><strong>Players:</strong></label>
+      <select id="player-count" style="font:inherit;padding:.4rem .7rem;border-radius:10px;border:2px solid #c9ae7d;background:#fff9ec">
+        <option value="1">1 forager</option>
+        <option value="2" selected>2 foragers</option>
+        <option value="3">3 foragers</option>
+        <option value="4">4 foragers</option>
+      </select>
+    </div>
+    <div id="party-chips" class="player-setup"></div>
+    <p id="pick-hint" class="muted" style="margin-top:.8rem"></p>
+    <div id="char-grid" class="setup-grid"></div>
+    <div class="row-actions" style="margin-top:1.2rem;justify-content:flex-end">
+      <button class="btn-ghost" id="btn-back-title" style="color:var(--ink);border-color:rgba(92,61,34,.3);background:#efe2c4">Back</button>
+      <button class="btn-secondary" id="btn-choose" type="button" disabled>Choose</button>
+      <button class="btn-primary" id="btn-begin" disabled>Play Game</button>
+    </div>
+  </div>
+</div>
+
+<div id="play-screen" class="screen">
+  <div class="corner" id="seat-0"></div>
+  <div id="turn-dock">
+    <p class="dock-idle" id="status-badge">Waiting for players…</p>
+  </div>
+  <div class="corner" id="seat-1"></div>
+  <div class="corner" id="seat-2"></div>
+  <div id="path-panel">
+    <div class="board-map" id="board"></div>
+  </div>
+  <div class="corner" id="seat-3"></div>
+</div>
+
+<div id="end-screen" class="screen">
+  <div class="panel">
+    <img id="end-art" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:16px;margin-bottom:.8rem" />
+    <h2 id="end-title">Trail’s End</h2>
+    <p id="end-msg" class="muted"></p>
+    <div class="winner-list" id="winner-list"></div>
+    <div class="row-actions">
+      <button class="btn-primary" id="btn-replay">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="modal">
+  <div class="modal" id="modal-box">
+    <h3 id="modal-title" class="card-title">Event</h3>
+    <img class="turn-hero" id="modal-hero" alt="" hidden />
+    <img class="icon" id="modal-icon" alt="" hidden />
+    <div class="dice-face" id="modal-dice" hidden>1</div>
+    <p id="modal-body" class="card-body"></p>
+    <div class="choice-btns" id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+/* ASSETS_PLACEHOLDER */
+
+const FOOD_EMOJIS = ["🫐","🍓","🌰","🍖","🐟","🦌","🥕","🌾","🍄","🥜","🍇","🦃"];
+
+const CHARACTERS = [
+  {
+    id: "hunter",
+    name: "The Hunter",
+    story: "You track deer and antelope across the open grass.",
+    fact: "Hunter-gatherers often followed animal herds with the seasons.",
+    looks: [
+      { id: "k1", label: "Look 1", img: "char_hunter_k1" },
+      { id: "k2", label: "Look 2", img: "char_hunter_k2" },
+      { id: "k3", label: "Look 3", img: "char_hunter_k3" }
+    ]
+  },
+  {
+    id: "gatherer",
+    name: "The Gatherer",
+    story: "You know which berries, roots, and nuts are safe to eat.",
+    fact: "Gathered plants often provided more daily calories than hunting.",
+    looks: [
+      { id: "k1", label: "Look 1", img: "char_gatherer_k1" },
+      { id: "k2", label: "Look 2", img: "char_gatherer_k2" },
+      { id: "k3", label: "Look 3", img: "char_gatherer_k3" }
+    ]
+  },
+  {
+    id: "fisher",
+    name: "The Fisher",
+    story: "Rivers and lakes are your pantry — fish, frogs, and reeds.",
+    fact: "Coastal and river groups used spears, nets, and traps for fish.",
+    looks: [
+      { id: "k1", label: "Look 1", img: "char_fisher_k1" },
+      { id: "k2", label: "Look 2", img: "char_fisher_k2" },
+      { id: "k3", label: "Look 3", img: "char_fisher_k3" }
+    ]
+  },
+  {
+    id: "tracker",
+    name: "The Tracker",
+    story: "You read footprints and weather signs before the hunt.",
+    fact: "Tracking skills helped bands find game with less wasted effort.",
+    looks: [
+      { id: "k1", label: "Look 1", img: "char_tracker_k1" },
+      { id: "k2", label: "Look 2", img: "char_tracker_k2" },
+      { id: "k3", label: "Look 3", img: "char_tracker_k3" }
+    ]
+  },
+  {
+    id: "fire",
+    name: "The Fire Keeper",
+    story: "You protect the campfire — cook food, warm the band, keep predators away.",
+    fact: "Controlled fire let people cook tougher foods and live in colder places.",
+    looks: [
+      { id: "k1", label: "Look 1", img: "char_fire_k1" },
+      { id: "k2", label: "Look 2", img: "char_fire_k2" },
+      { id: "k3", label: "Look 3", img: "char_fire_k3" }
+    ]
+  },
+  {
+    id: "storyteller",
+    name: "The Storyteller",
+    story: "You remember trails, seasons, and campfire stories that keep the band safe.",
+    fact: "Storytellers passed down knowledge about plants, animals, and safe routes.",
+    looks: [
+      { id: "k1", label: "Look 1", img: "char_story_k1" },
+      { id: "k2", label: "Look 2", img: "char_story_k2" },
+      { id: "k3", label: "Look 3", img: "char_story_k3" }
+    ]
+  }
+];
+
+/**
+ * Token centers detected from the plains board art (tile midpoints).
+ * Path order: top L→R, right curve, bottom R→L. First = START, last = END.
+ */
+const PATH_POS = [
+  { x: 14.97, y: 27.95 }, { x: 21.48, y: 27.95 }, { x: 27.08, y: 27.95 }, { x: 32.68, y: 27.95 },
+  { x: 38.15, y: 27.95 }, { x: 43.75, y: 27.95 }, { x: 49.22, y: 27.95 }, { x: 54.69, y: 27.95 },
+  { x: 59.9, y: 27.95 }, { x: 65.36, y: 27.95 }, { x: 70.7, y: 27.95 }, { x: 76.04, y: 27.95 },
+  { x: 81.38, y: 28.12 }, { x: 86.07, y: 30.03 }, { x: 88.93, y: 34.03 }, { x: 90.36, y: 40.1 },
+  { x: 91.15, y: 46.18 }, { x: 91.54, y: 52.95 }, { x: 91.28, y: 59.9 }, { x: 89.32, y: 65.45 },
+  { x: 85.94, y: 68.58 }, { x: 80.6, y: 69.27 }, { x: 75.91, y: 69.27 }, { x: 70.83, y: 69.27 },
+  { x: 65.49, y: 69.27 }, { x: 60.03, y: 69.27 }, { x: 54.43, y: 69.27 }, { x: 48.7, y: 69.27 },
+  { x: 43.1, y: 69.27 }, { x: 37.37, y: 69.27 }, { x: 31.64, y: 69.27 }, { x: 25.78, y: 69.27 },
+  { x: 19.92, y: 69.27 }, { x: 13.15, y: 69.27 }
+];
+
+const BOARD = PATH_POS.map((_, id) => {
+  if (id === 0) return { id, name: "START", kind: "start" };
+  if (id === PATH_POS.length - 1) return { id, name: "END", kind: "end" };
+  return { id, name: `Space ${id + 1}`, kind: "trail" };
+});
+
+/**
+ * Outcome cards — titles/bodies from the PDF experience cards.
+ * OCR struggled on the caveman title font; bodies are from the printed cards.
+ * Duplicates from the printable sheets are included once.
+ */
+const OUTCOME_CARDS = [
+  { name: "FIND FRESH FRUIT", text: "Gain 2 food cards", img: "card_fresh_fruit", effect: { gain: 2 } },
+  { name: "FOUND A DEER HERD", text: "Roll the dice to see how many food cards you get", img: "card_deer_herd", effect: { rollGain: true } },
+  { name: "YOUR SPEAR BREAKS", text: "Lose 3 food cards", img: "card_spear_breaks", effect: { pay: 3 } },
+  { name: "FOUND ANTELOPE FOOTPRINTS", text: "Gain 1 food card", img: "card_antelope_prints", effect: { gain: 1 } },
+  { name: "FOUND MYSTERIOUS BERRIES", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", img: "card_mysterious_berries", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 } } } },
+  { name: "TOO MUCH RAIN TO HUNT", text: "Skip rolling the dice", img: "card_rain", effect: { skipNext: true } },
+  { name: "FOUND A PATCH OF WILD BERRIES", text: "Gain 1 food card", img: "card_wild_berries", effect: { gain: 1 } },
+  { name: "ANIMAL HERD MOVED ON", text: "No food cards", img: "card_herd_moved", effect: {} },
+  { name: "LOST TRACK OF THE DEER HERD", text: "Lose 1 food card", img: "card_lost_deer", effect: { pay: 1 } },
+  { name: "GOOD WEATHER", text: "Roll the dice twice", img: "card_good_weather", effect: { bonusRolls: 1 } },
+  { name: "ANIMALS GOT TO YOUR FOOD SUPPLY", text: "Discard all but 1 food card", img: "card_animals_raid", effect: { leaveOne: true } },
+  { name: "THREE DAYS WITHOUT FOOD", text: "Skip rolling the dice", img: "card_no_food", effect: { skipNext: true } },
+  { name: "EARLY WINTER", text: "Lose one turn", img: "card_early_winter", effect: { skip: 1 } },
+  { name: "WENT FISHING", text: "Gain 1 food card", img: "card_fishing", effect: { gain: 1 } },
+  { name: "SABER TOOTH TIGER ATTACK", text: "Skip your next turn", img: "card_saber_tooth", effect: { skip: 1 } },
+  { name: "UNSUCCESSFUL HUNT", text: "Lose 1 food card", img: "card_unsuccessful_hunt", effect: { pay: 1 } },
+  { name: "RAN INTO A GROUP OF PEOPLE", text: "switch food cards with another player", img: "card_group_people", effect: { swap: true } },
+  { name: "TURMOIL IN YOUR TRIBE", text: "Lose your turn", img: "card_turmoil", effect: { skipNext: true } },
+  { name: "FOREST FIRE", text: "Roll the dice to see how many food cards you have to discard", img: "card_forest_fire", effect: { rollPay: true } },
+  { name: "CAMPED NEAR A BUFFALO CROSSING", text: "Roll the dice to see how many food cards you gain", img: "card_buffalo", effect: { rollGain: true } },
+  { name: "FOUND A DEER HERD", text: "Gain 1 food card", img: "card_deer_herd", effect: { gain: 1 } },
+  { name: "WOOLY MAMMOTH", text: "Gain 3 food cards", img: "card_mammoth", effect: { gain: 3 } },
+  { name: "SNOWSTORM, CAN'T HUNT", text: "Lose your turn", img: "card_snowstorm", effect: { skipNext: true } },
+  { name: "DISEASE HAS AFFECTED YOUR PEOPLE", text: "Lose your turn", img: "card_disease", effect: { skipNext: true } },
+  { name: "STUMBLED ACROSS ROOTS", text: "Gain 1 food card", img: "card_roots", effect: { gain: 1 } },
+  { name: "FOUND A LAKE FULL OF FISH", text: "Gain 2 food cards", img: "card_lake_fish", effect: { gain: 2 } },
+  { name: "NO WATER", text: "Lose your turn", img: "card_no_water", effect: { skipNext: true } },
+  { name: "TRIBAL WAR", text: "switch food cards with another player", img: "card_tribal_war", effect: { swap: true } },
+  { name: "CAME TO A FORK IN THE ROAD", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", img: "card_fork_road", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 } } } },
+  { name: "POISONOUS MUSHROOMS", text: "Lose 2 food cards", img: "card_mushrooms", effect: { pay: 2 } },
+  { name: "FOUND WALNUT TREE", text: "Gain 1 food card", img: "card_walnut", effect: { gain: 1 } },
+  { name: "RIVER CROSSING", text: "Roll the dice. If it's odd you lose your turn. If it's even roll the dice twice.", img: "card_river", effect: { river: true } },
+  { name: "BROKEN WEAPON", text: "Lose your turn", img: "card_broken_weapon", effect: { skipNext: true } },
+  { name: "TRADED WITH ANOTHER TRIBE", text: "Roll the dice to see how many food cards you gain", img: "card_trade", effect: { rollGain: true } },
+  { name: "BEAR ATTACK", text: "Lose 1 food card", img: "card_bear", effect: { pay: 1 } },
+  { name: "FOUND AN ELK HERD", text: "Gain 1 food card", img: "card_elk_herd", effect: { gain: 1 } }
+];
+
+const state = {
+  players: [],
+  current: 0,
+  deck: [],
+  selectingFor: 0,
+  draft: null,
+  cardShowcase: {},
+  characterOrder: [],
+  hoppingId: null,
+  busy: false
+};
+
+const $ = (id) => document.getElementById(id);
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+function asset(key) {
+  return (window.ASSETS && window.ASSETS[key]) || "";
+}
+
+function initArt() {
+  document.body.style.setProperty("--bg", `url("${asset("bg_camp")}")`);
+  document.body.style.setProperty("--trail-map", `url("${asset("bg_hunt_map")}")`);
+  $("title-bg").src = asset("bg_camp");
+  $("end-art").src = asset("bg_camp");
+}
+
+const music = {
+  audio: null,
+  on: false,
+  init() {
+    const src = asset("music_nature_walk");
+    if (!src) return;
+    this.audio = new Audio(src);
+    this.audio.loop = true;
+    this.audio.preload = "auto";
+    this.audio.volume = 0.5;
+    this.on = localStorage.getItem("hg-music") === "1";
+    this.syncBtn();
+    if (this.on) this.play();
+  },
+  syncBtn() {
+    const b = $("btn-music");
+    if (!b) return;
+    b.textContent = this.on ? "Music: On" : "Music: Off";
+    b.setAttribute("aria-pressed", this.on ? "true" : "false");
+  },
+  play() {
+    if (!this.audio) return;
+    this.on = true;
+    localStorage.setItem("hg-music", "1");
+    this.syncBtn();
+    const p = this.audio.play();
+    if (p && p.catch) p.catch(() => {});
+  },
+  stop() {
+    this.on = false;
+    localStorage.setItem("hg-music", "0");
+    if (this.audio) this.audio.pause();
+    this.syncBtn();
+  },
+  toggle() {
+    if (this.on) this.stop();
+    else this.play();
+  }
+};
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function refillDeck() {
+  const multi = state.players.length > 1;
+  const pool = OUTCOME_CARDS.filter(c => multi || !c.effect?.swap);
+  state.deck = shuffle(pool);
+}
+
+function drawCard() {
+  if (!state.deck.length) refillDeck();
+  return state.deck.pop();
+}
+
+function randomFoodEmoji() {
+  return FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)];
+}
+
+function foodCount(p) {
+  return p.food.length;
+}
+
+/** Classic d6 pip positions on a 3×3 grid (1–9, left-to-right, top-to-bottom). */
+const DIE_PIPS = {
+  1: [5],
+  2: [1, 9],
+  3: [1, 5, 9],
+  4: [1, 3, 7, 9],
+  5: [1, 3, 5, 7, 9],
+  6: [1, 3, 4, 6, 7, 9]
+};
+
+function setDiceFace(diceEl, n) {
+  const pips = DIE_PIPS[n] || [];
+  diceEl.setAttribute("aria-label", `Rolled ${n}`);
+  diceEl.innerHTML = Array.from({ length: 9 }, (_, i) =>
+    pips.includes(i + 1) ? '<span class="pip"></span>' : "<span></span>"
+  ).join("");
+}
+
+async function animateDockDice(diceEl, finalValue) {
+  const flashes = 10 + Math.floor(Math.random() * 5); // 10–14 faces
+  let last = 0;
+  for (let i = 0; i < flashes; i++) {
+    let n = 1 + Math.floor(Math.random() * 6);
+    if (n === last) n = (n % 6) + 1;
+    last = n;
+    setDiceFace(diceEl, n);
+    diceEl.classList.remove("dice-tick", "dice-land");
+    void diceEl.offsetWidth;
+    diceEl.classList.add("dice-tick");
+    // Start fast, ease into a slow finish
+    const t = flashes === 1 ? 1 : i / (flashes - 1);
+    const delay = Math.round(45 + 320 * t * t);
+    await sleep(delay);
+  }
+  setDiceFace(diceEl, finalValue);
+  diceEl.classList.remove("dice-tick");
+  void diceEl.offsetWidth;
+  diceEl.classList.add("dice-land");
+  await sleep(280);
+}
+
+/** Turn / dice / outcome UI — lives in the top-middle dock (no bordered popup). */
+function showTurnDock({ title, body, hero, dice, actions, cardStyle, animateDice }) {
+  const shouldAnimate = animateDice && dice != null;
+  return new Promise(resolve => {
+    const dock = $("turn-dock");
+    const diceHtml = dice != null
+      ? `<div class="dock-dice" aria-label="Dice"></div>`
+      : "";
+    const heroHtml = hero
+      ? `<img class="dock-hero" src="${asset(hero)}" alt="" />`
+      : "";
+    const bodyText = shouldAnimate ? "Rolling…" : (body || "");
+    dock.innerHTML = `
+      <div class="dock-inner">
+        ${heroHtml}
+        <div class="dock-main">
+          <div class="dock-copy ${cardStyle ? "card-mode" : ""}">
+            <h3>${title || ""}</h3>
+            <p>${bodyText.replace(/</g, "&lt;")}</p>
+          </div>
+          ${diceHtml}
+          <div class="dock-actions" id="dock-actions"></div>
+        </div>
+      </div>`;
+    const box = $("dock-actions");
+    const buttons = [];
+    (actions || [{ label: "OK", value: true }]).forEach(a => {
+      const b = document.createElement("button");
+      b.className = a.secondary ? "btn-secondary" : "btn-primary";
+      b.textContent = a.label;
+      b.disabled = true;
+      b.onclick = () => resolve(a.value);
+      box.appendChild(b);
+      buttons.push(b);
+    });
+
+    const unlock = () => {
+      buttons.forEach((b, i) => {
+        const a = (actions || [{ label: "OK", value: true }])[i];
+        b.disabled = !!(a && a.disabled);
+      });
+    };
+
+    const diceEl = dock.querySelector(".dock-dice");
+    if (shouldAnimate && diceEl) {
+      const bodyEl = dock.querySelector(".dock-copy p");
+      animateDockDice(diceEl, dice).then(() => {
+        if (bodyEl) bodyEl.textContent = body || "";
+        unlock();
+      });
+    } else {
+      if (diceEl && dice != null) setDiceFace(diceEl, dice);
+      unlock();
+    }
+  });
+}
+
+function setTurnDockIdle(msg) {
+  $("turn-dock").innerHTML = `<p class="dock-idle">${msg || ""}</p>`;
+}
+
+function openModal({ title, body, icon, hero, dice, actions, turnStyle, cardStyle }) {
+  // Prefer the top dock for play prompts; keep modal for setup/help only when asked
+  if (turnStyle || cardStyle || hero || dice != null) {
+    return showTurnDock({
+      title, body, hero, dice, actions,
+      cardStyle: cardStyle || !turnStyle,
+      animateDice: dice != null
+    });
+  }
+  return new Promise(resolve => {
+    const back = $("modal");
+    const box = $("modal-box");
+    box.classList.remove("turn-modal");
+    $("modal-title").textContent = title || "";
+    $("modal-title").className = "card-title";
+    $("modal-title").style.fontFamily = "";
+    $("modal-title").style.fontSize = "";
+    $("modal-body").textContent = body || "";
+    $("modal-body").className = "card-body";
+    $("modal-body").style.whiteSpace = "pre-line";
+    $("modal-hero").hidden = true;
+    const iconEl = $("modal-icon");
+    if (icon) { iconEl.src = asset(icon); iconEl.hidden = false; }
+    else { iconEl.hidden = true; }
+    $("modal-dice").hidden = true;
+    const actionsBox = $("modal-actions");
+    actionsBox.innerHTML = "";
+    (actions || [{ label: "OK", value: true }]).forEach(a => {
+      const b = document.createElement("button");
+      b.className = a.secondary ? "btn-secondary" : "btn-primary";
+      b.textContent = a.label;
+      if (a.disabled) b.disabled = true;
+      b.onclick = () => { back.classList.remove("show"); resolve(a.value); };
+      actionsBox.appendChild(b);
+    });
+    back.classList.add("show");
+  });
+}
+
+function startSetup() {
+  showScreen("setup-screen");
+  randomShowcase(true);
+  resetParty();
+}
+
+function randomShowcase(force = false) {
+  if (!force && Object.keys(state.cardShowcase).length) return;
+  state.cardShowcase = {};
+  CHARACTERS.forEach(c => {
+    const look = c.looks[Math.floor(Math.random() * c.looks.length)];
+    state.cardShowcase[c.id] = look.id;
+  });
+  // Randomize card positions on the selection grid
+  state.characterOrder = shuffle(CHARACTERS.map(c => c.id));
+}
+
+function resetParty() {
+  const n = Number($("player-count").value);
+  state.players = Array.from({ length: n }, (_, i) => ({
+    id: i,
+    name: `Forager ${i + 1}`,
+    character: null,
+    food: [randomFoodEmoji(), randomFoodEmoji()],
+    pos: 0,
+    skip: 0,
+    finished: false,
+    colorClass: `p${i}`
+  }));
+  state.selectingFor = 0;
+  state.draft = null;
+  // Keep existing showcase portraits when only the player count changes
+  randomShowcase(false);
+  renderSetup();
+}
+
+function ensureSelectingFor() {
+  if (state.selectingFor >= 0 && state.selectingFor < state.players.length) return;
+  const need = state.players.findIndex(p => !p.character);
+  state.selectingFor = need === -1 ? 0 : need;
+}
+
+function lookById(ch, lookId) {
+  return ch.looks.find(l => l.id === lookId) || ch.looks[0];
+}
+
+function setDraft(roleId, lookId) {
+  ensureSelectingFor();
+  const editor = state.players[state.selectingFor];
+  if (!editor) return;
+  const ch = CHARACTERS.find(c => c.id === roleId);
+  if (!ch) return;
+  const heldByOther = state.players.find(p => p.id !== editor.id && p.character && p.character.id === ch.id);
+  if (heldByOther) return;
+  const look = lookById(ch, lookId);
+  state.draft = { roleId: ch.id, lookId: look.id };
+  // Remember the last look clicked for this role so it stays when switching cards
+  state.cardShowcase[ch.id] = look.id;
+  renderSetup();
+}
+
+function isLastPlayerSelecting() {
+  const unset = state.players.filter(p => !p.character);
+  if (unset.length !== 1) return false;
+  return state.players[state.selectingFor]?.id === unset[0].id;
+}
+
+/** Lock the current draft onto the editor. Returns true if applied. */
+function applyDraft() {
+  ensureSelectingFor();
+  const editor = state.players[state.selectingFor];
+  if (!editor || !state.draft) return false;
+  const ch = CHARACTERS.find(c => c.id === state.draft.roleId);
+  if (!ch) return false;
+  const heldByOther = state.players.find(p => p.id !== editor.id && p.character && p.character.id === ch.id);
+  if (heldByOther) return false;
+  const look = lookById(ch, state.draft.lookId);
+  editor.character = { ...ch, img: look.img, lookId: look.id, lookLabel: look.label };
+  editor.name = ch.name.replace(/^The /, "");
+  state.draft = null;
+  return true;
+}
+
+function confirmChoose() {
+  if (!applyDraft()) return;
+  const nextNeed = state.players.findIndex(p => !p.character);
+  if (nextNeed !== -1) state.selectingFor = nextNeed;
+  renderSetup();
+}
+
+function tryBeginGame() {
+  if (isLastPlayerSelecting() && state.draft) applyDraft();
+  if (state.players.some(p => !p.character)) return;
+  beginGame();
+}
+
+function renderSetup() {
+  ensureSelectingFor();
+  const editor = state.players[state.selectingFor];
+  const draftRole = state.draft ? CHARACTERS.find(c => c.id === state.draft.roleId) : null;
+  const draftLook = draftRole ? lookById(draftRole, state.draft.lookId) : null;
+
+  const chips = $("party-chips");
+  chips.innerHTML = state.players.map((p, i) => {
+    const editing = i === state.selectingFor ? "editing" : "";
+    if (!p.character) {
+      const pending = i === state.selectingFor && draftLook
+        ? ` · picking ${draftRole.name.replace(/^The /, "")}`
+        : ": choosing…";
+      return `<button type="button" class="player-chip ${editing}" data-player="${i}">Forager ${i + 1}${pending}</button>`;
+    }
+    return `<button type="button" class="player-chip ${editing}" data-player="${i}"><img src="${asset(p.character.img)}" alt="" /> ${p.name}: ${p.character.name} · ${p.character.lookLabel}</button>`;
+  }).join("");
+
+  const allReady = state.players.every(p => p.character);
+  const lastPick = isLastPlayerSelecting();
+  const who = `Forager ${state.selectingFor + 1}`;
+  if (allReady) $("pick-hint").textContent = `${who} can change with Choose, or press Play Game.`;
+  else if (lastPick && state.draft) $("pick-hint").textContent = `${who}: ${draftRole.name} · ${draftLook.label} selected — press Play Game.`;
+  else if (lastPick) $("pick-hint").textContent = `${who}, pick a role and appearance, then press Play Game.`;
+  else if (state.draft) $("pick-hint").textContent = `${who}: ${draftRole.name} · ${draftLook.label} selected — press Choose to lock it in.`;
+  else $("pick-hint").textContent = `${who}, pick a role and appearance, then press Choose.`;
+
+  const takenByOther = new Set(
+    state.players.filter(p => p.id !== editor.id && p.character).map(p => p.character.id)
+  );
+  const orderedChars = (state.characterOrder.length
+    ? state.characterOrder.map(id => CHARACTERS.find(c => c.id === id)).filter(Boolean)
+    : CHARACTERS.slice());
+  $("char-grid").innerHTML = orderedChars.map(c => {
+    const locked = takenByOther.has(c.id);
+    const isDraft = state.draft && state.draft.roleId === c.id;
+    const isMine = editor.character && editor.character.id === c.id;
+    let previewLookId = state.cardShowcase[c.id] || c.looks[0].id;
+    if (isDraft) previewLookId = state.draft.lookId;
+    else if (isMine && !state.draft) previewLookId = editor.character.lookId;
+    // Highlight the look shown on this card (last clicked / showcase), not only the active draft
+    const activeLook = previewLookId;
+    const preview = lookById(c, previewLookId).img;
+    return `<div class="char-card ${isDraft || (isMine && !state.draft) ? "selected" : ""}" data-id="${c.id}" style="${locked ? "opacity:.45;pointer-events:none" : ""}">
+      <img class="hero" src="${asset(preview)}" alt="${c.name}" />
+      <div class="look-row">
+        ${c.looks.map(l => `<button type="button" class="look-btn ${activeLook === l.id ? "active" : ""}" data-role="${c.id}" data-look="${l.id}" title="${l.label}" ${locked ? "disabled" : ""}><img src="${asset(l.img)}" alt="${l.label}" /></button>`).join("")}
+      </div>
+      <div class="body">
+        <h3>${c.name}</h3>
+        <span class="badge">Starts with 2 food</span>
+        <p>${c.story}</p>
+        <p class="muted"><em>Fun fact:</em> ${c.fact}</p>
+      </div>
+    </div>`;
+  }).join("");
+
+  chips.onclick = (e) => {
+    const chip = e.target.closest("[data-player]");
+    if (!chip) return;
+    state.selectingFor = Number(chip.dataset.player);
+    const p = state.players[state.selectingFor];
+    state.draft = p.character ? { roleId: p.character.id, lookId: p.character.lookId } : null;
+    renderSetup();
+  };
+
+  $("char-grid").onclick = (e) => {
+    const lookBtn = e.target.closest(".look-btn");
+    if (lookBtn && !lookBtn.disabled) {
+      e.stopPropagation();
+      setDraft(lookBtn.dataset.role, lookBtn.dataset.look);
+      return;
+    }
+    const card = e.target.closest(".char-card");
+    if (!card) return;
+    const ch = CHARACTERS.find(c => c.id === card.dataset.id);
+    if (takenByOther.has(ch.id)) return;
+    // Keep whichever look was last clicked for this character
+    const keepLook = state.cardShowcase[ch.id]
+      || (state.draft && state.draft.roleId === ch.id ? state.draft.lookId : null)
+      || ch.looks[0].id;
+    setDraft(ch.id, keepLook);
+  };
+
+  $("btn-choose").hidden = lastPick;
+  $("btn-choose").disabled = lastPick || !state.draft;
+  $("btn-begin").disabled = lastPick
+    ? !state.draft
+    : state.players.some(p => !p.character);
+}
+
+function renderBoard() {
+  const hopId = state.hoppingId;
+  const slots = PATH_POS.map((pos, pathIndex) => {
+    const here = state.players.some(p => p.pos === pathIndex);
+    const tokens = state.players.filter(p => p.pos === pathIndex);
+    const step = hopId != null && tokens.some(p => p.id === hopId);
+    return `<div class="token-slot ${here ? "here" : ""} ${step ? "step-on" : ""}" data-path="${pathIndex}" style="left:${pos.x}%;top:${pos.y}%;">
+      ${tokens.map(p => `<img class="${p.colorClass}${hopId === p.id ? " hop" : ""}" src="${asset(p.character.img)}" title="${p.name}" alt="${p.name}" />`).join("")}
+    </div>`;
+  }).join("");
+  $("board").innerHTML = `<div class="board-fit">
+    <img class="board-art" src="${asset("board_plains_u")}" alt="Plains trail board" />
+    ${slots}
+  </div>`;
+}
+
+function renderSeats() {
+  for (let i = 0; i < 4; i++) {
+    const el = $(`seat-${i}`);
+    const p = state.players[i];
+    if (!p || !p.character) {
+      el.className = "corner empty";
+      el.innerHTML = "";
+      continue;
+    }
+    const active = i === state.current && !p.finished;
+    el.className = `corner ${active ? "active-seat" : ""} ${p.finished ? "won" : ""}`;
+    el.innerHTML = `
+      <div class="avatar-wrap">
+        <img class="avatar" src="${asset(p.character.img)}" alt="${p.character.name}" />
+      </div>
+      <div class="seat-role">${p.character.name}</div>
+      <div class="food-count">${foodCount(p)} food</div>
+    `;
+  }
+  paintFoodDeltas();
+  if (!state.busy) {
+    const msg = state.players.every(p => p.finished)
+      ? "Finished"
+      : `${state.players[state.current]?.name || ""}'s turn`;
+    const idle = $("turn-dock").querySelector(".dock-idle");
+    if (idle) idle.textContent = msg;
+    else if (!$("turn-dock").querySelector(".dock-inner")) setTurnDockIdle(msg);
+  }
+}
+
+function beginGame() {
+  state.current = 0;
+  state.busy = false;
+  refillDeck();
+  showScreen("play-screen");
+  renderBoard();
+  renderSeats();
+  prepareTurn();
+}
+
+function advancePlayerIndex() {
+  state.current = (state.current + 1) % state.players.length;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function pathForward(from, steps) {
+  const path = [];
+  let pos = from;
+  for (let i = 0; i < steps; i++) {
+    if (pos >= BOARD.length - 1) break;
+    pos += 1;
+    path.push(pos);
+  }
+  return path;
+}
+
+async function animateAlong(player, path) {
+  if (!path.length) return;
+  state.hoppingId = player.id;
+  for (const pos of path) {
+    player.pos = pos;
+    renderBoard();
+    renderSeats();
+    const el = document.querySelector(`.token-slot[data-path="${pos}"]`);
+    if (el) el.classList.add("step-on");
+    await sleep(300);
+  }
+  state.hoppingId = null;
+  renderBoard();
+  renderSeats();
+}
+
+/** Survive seat re-renders so +/- labels aren't wiped when the turn advances. */
+const FOOD_DELTA_MS = 1150;
+const foodDeltaFx = [];
+
+function queueFoodDelta(playerId, delta) {
+  if (!delta) return;
+  const fx = { playerId, delta, t0: performance.now() };
+  foodDeltaFx.push(fx);
+  setTimeout(() => {
+    const i = foodDeltaFx.indexOf(fx);
+    if (i >= 0) foodDeltaFx.splice(i, 1);
+  }, FOOD_DELTA_MS + 50);
+}
+
+function paintFoodDeltas() {
+  const now = performance.now();
+  for (let i = foodDeltaFx.length - 1; i >= 0; i--) {
+    if (now - foodDeltaFx[i].t0 >= FOOD_DELTA_MS) foodDeltaFx.splice(i, 1);
+  }
+  for (const fx of foodDeltaFx) {
+    const foodEl = $(`seat-${fx.playerId}`)?.querySelector(".food-count");
+    if (!foodEl) continue;
+    const tag = document.createElement("span");
+    tag.className = `food-delta ${fx.delta > 0 ? "gain" : "loss"}`;
+    tag.textContent = fx.delta > 0 ? `+${fx.delta}` : `${fx.delta}`;
+    const elapsed = Math.max(0, now - fx.t0);
+    tag.style.animationDelay = `-${elapsed}ms`;
+    foodEl.appendChild(tag);
+  }
+}
+
+function gainFood(player, n) {
+  if (n <= 0) return;
+  for (let i = 0; i < n; i++) player.food.push(randomFoodEmoji());
+  queueFoodDelta(player.id, n);
+}
+
+function loseFood(player, n) {
+  const lost = Math.min(player.food.length, n);
+  player.food.splice(0, lost);
+  queueFoodDelta(player.id, -lost);
+  return lost;
+}
+
+function loseFoodText(want, have) {
+  const n = Math.min(want, have);
+  return `Lose ${n} food card${n === 1 ? "" : "s"}`;
+}
+
+function outcomeBody(card, player) {
+  if (card.effect?.pay) return loseFoodText(card.effect.pay, foodCount(player));
+  return card.text;
+}
+
+function seatFoodAnchor(playerId) {
+  const el = $(`seat-${playerId}`)?.querySelector(".food-count");
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2, el };
+}
+
+async function animateFoodSwap(a, b) {
+  const aCount = foodCount(a);
+  const bCount = foodCount(b);
+  if (aCount === 0 && bCount === 0) return;
+
+  const fromA = seatFoodAnchor(a.id);
+  const fromB = seatFoodAnchor(b.id);
+  if (!fromA || !fromB) return;
+
+  const flies = [];
+  const spawn = (emoji, start, end) => {
+    const node = document.createElement("div");
+    node.className = "food-fly";
+    node.textContent = emoji;
+    node.style.left = `${start.x - 12}px`;
+    node.style.top = `${start.y - 12}px`;
+    document.body.appendChild(node);
+    // force layout then move
+    node.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      node.style.left = `${end.x - 12}px`;
+      node.style.top = `${end.y - 12}px`;
+      node.classList.add("going");
+    });
+    flies.push(node);
+  };
+
+  const aFood = a.food.length ? a.food.slice() : [];
+  const bFood = b.food.length ? b.food.slice() : [];
+  // Cap visible flyers so it doesn't explode with many cards
+  aFood.slice(0, 8).forEach((emoji, i) => {
+    setTimeout(() => spawn(emoji, fromA, fromB), i * 40);
+  });
+  bFood.slice(0, 8).forEach((emoji, i) => {
+    setTimeout(() => spawn(emoji, fromB, fromA), i * 40);
+  });
+
+  fromA.el.classList.add("swap-flash");
+  fromB.el.classList.add("swap-flash");
+  await sleep(900);
+  flies.forEach(n => n.remove());
+  fromA.el.classList.remove("swap-flash");
+  fromB.el.classList.remove("swap-flash");
+}
+
+async function applyEffect(player, effect) {
+  if (!effect) return { bonusRolls: 0 };
+  let bonusRolls = 0;
+
+  if (effect.gain) gainFood(player, effect.gain);
+  if (effect.pay) loseFood(player, effect.pay);
+  if (effect.leaveOne) {
+    const before = player.food.length;
+    if (before > 1) {
+      player.food = [player.food[0]];
+      queueFoodDelta(player.id, 1 - before);
+    }
+  }
+  if (effect.skip) player.skip += effect.skip;
+  if (effect.skipNext) player.skip += 1;
+  if (effect.bonusRolls) bonusRolls += effect.bonusRolls;
+
+  if (effect.rollGain) {
+    const roll = 1 + Math.floor(Math.random() * 6);
+    await openModal({
+      title: "Food roll",
+      body: `Rolled ${roll} — gain ${roll} food cards`,
+      dice: roll,
+      icon: "icon_dice"
+    });
+    gainFood(player, roll);
+  }
+  if (effect.rollPay) {
+    const roll = 1 + Math.floor(Math.random() * 6);
+    const lost = loseFood(player, roll);
+    await openModal({
+      title: "Discard roll",
+      body: `Rolled ${roll} — discard ${lost} food cards`,
+      dice: roll,
+      icon: "icon_dice"
+    });
+  }
+  if (effect.oddEven) {
+    const roll = 1 + Math.floor(Math.random() * 6);
+    const odd = roll % 2 === 1;
+    await openModal({
+      title: odd ? `Odd — ${roll}` : `Even — ${roll}`,
+      body: odd ? "Odd roll." : "Even roll.",
+      dice: roll,
+      icon: "icon_dice"
+    });
+    const nested = await applyEffect(player, odd ? effect.oddEven.odd : effect.oddEven.even);
+    bonusRolls += nested.bonusRolls || 0;
+  }
+  if (effect.swap) {
+    const others = state.players.filter(p => p.id !== player.id);
+    if (others.length === 0) {
+      // Solo game — swap cards are filtered out; no-op if one slips through
+    } else {
+      const other = others[Math.floor(Math.random() * others.length)];
+      await showTurnDock({
+        title: "Switch food cards",
+        body: `Switching food with ${other.character.name}!`,
+        hero: player.character.img,
+        actions: [{ label: "Swap!", value: true }]
+      });
+      await animateFoodSwap(player, other);
+      const aBefore = foodCount(player);
+      const bBefore = foodCount(other);
+      const tmp = player.food;
+      player.food = other.food;
+      other.food = tmp;
+      queueFoodDelta(player.id, foodCount(player) - aBefore);
+      queueFoodDelta(other.id, foodCount(other) - bBefore);
+      renderSeats();
+    }
+  }
+  if (effect.river) {
+    const roll = 1 + Math.floor(Math.random() * 6);
+    const odd = roll % 2 === 1;
+    await openModal({
+      title: "RIVER CROSSING",
+      body: odd
+        ? `Rolled ${roll} (odd) — lose your turn`
+        : `Rolled ${roll} (even) — roll the dice twice`,
+      dice: roll,
+      icon: "icon_dice"
+    });
+    if (odd) player.skip += 1;
+    else bonusRolls += 1;
+  }
+
+  renderSeats();
+  return { bonusRolls };
+}
+
+async function movePlayer(player, steps) {
+  if (steps <= 0) return;
+  const path = pathForward(player.pos, steps);
+  await animateAlong(player, path);
+  if (player.pos >= BOARD.length - 1) {
+    player.finished = true;
+    player.pos = BOARD.length - 1;
+    await showTurnDock({
+      title: "You made it!",
+      body: `${player.name} reached END!`,
+      hero: player.character.img,
+      actions: [{ label: "OK", value: true }]
+    });
+  }
+}
+
+function playOutcomeBurst(player, imgKey) {
+  if (!imgKey || !asset(imgKey)) return () => {};
+  const seat = $(`seat-${player.id}`);
+  const wrap = seat && seat.querySelector(".avatar-wrap");
+  if (!wrap) return () => {};
+  wrap.querySelectorAll(".outcome-burst").forEach(el => el.remove());
+  const img = document.createElement("img");
+  img.className = "outcome-burst";
+  img.src = asset(imgKey);
+  img.alt = "";
+  wrap.appendChild(img);
+  return () => img.remove();
+}
+
+async function showOutcome(player) {
+  const card = drawCard();
+  const clearBurst = playOutcomeBurst(player, card.img);
+  await showTurnDock({
+    title: card.name,
+    body: outcomeBody(card, player),
+    cardStyle: true,
+    actions: [{ label: "OK", value: true }]
+  });
+  clearBurst();
+  return applyEffect(player, card.effect);
+}
+
+async function doRollAndMove(player) {
+  const roll = 1 + Math.floor(Math.random() * 6);
+  await showTurnDock({
+    title: `${player.name} rolls`,
+    body: `Move ${roll} space${roll === 1 ? "" : "s"}.`,
+    hero: player.character.img,
+    dice: roll,
+    animateDice: true,
+    actions: [{ label: "Move", value: true }]
+  });
+  await movePlayer(player, roll);
+}
+
+async function prepareTurn() {
+  if (state.players.every(p => p.finished)) { endGame(); return; }
+  let guard = 0;
+  while (state.players[state.current].finished && guard < 12) {
+    advancePlayerIndex();
+    guard++;
+  }
+  if (state.players.every(p => p.finished)) { endGame(); return; }
+
+  const p = state.players[state.current];
+  renderSeats();
+
+  if (p.skip > 0) {
+    state.busy = true;
+    await showTurnDock({
+      title: `${p.name} sits out`,
+      body: `${p.name} loses this turn.`,
+      hero: p.character.img,
+      actions: [{ label: "Next", value: true }]
+    });
+    p.skip -= 1;
+    state.busy = false;
+    advancePlayerIndex();
+    renderSeats();
+    await prepareTurn();
+    return;
+  }
+
+  state.busy = true;
+  try {
+    await showTurnDock({
+      title: `${p.name}'s turn`,
+      body: "Roll the dice to move along the trail.",
+      hero: p.character.img,
+      actions: [{ label: "Roll Dice", value: true }]
+    });
+
+    const roll = 1 + Math.floor(Math.random() * 6);
+    await showTurnDock({
+      title: `${p.name} rolls`,
+      body: `Move ${roll} space${roll === 1 ? "" : "s"}.`,
+      hero: p.character.img,
+      dice: roll,
+      animateDice: true,
+      actions: [{ label: "Go!", value: true }]
+    });
+    setTurnDockIdle(`${p.name} is moving…`);
+    await movePlayer(p, roll);
+
+    if (!p.finished) {
+      const result = await showOutcome(p);
+      for (let i = 0; i < (result.bonusRolls || 0); i++) {
+        if (p.finished) break;
+        await doRollAndMove(p);
+        if (!p.finished) await showOutcome(p);
+      }
+    }
+
+    if (state.players.every(pl => pl.finished)) { endGame(); return; }
+    advancePlayerIndex();
+    renderBoard();
+    state.busy = false;
+    renderSeats();
+    await prepareTurn();
+  } finally {
+    state.busy = false;
+  }
+}
+
+function endGame() {
+  showScreen("end-screen");
+  const ranked = state.players.slice().sort((a, b) => foodCount(b) - foodCount(a));
+  const top = ranked[0] ? foodCount(ranked[0]) : 0;
+  const winners = ranked.filter(p => foodCount(p) === top && top > 0);
+  $("end-title").textContent = top === 0 ? "Camp is Quiet" : (winners.length > 1 ? "Shared Feast!" : "Most Food Wins!");
+  $("end-msg").textContent = top === 0
+    ? "Everyone finished, but nobody gathered food."
+    : winners.length > 1
+      ? `${winners.map(w => w.name).join(" & ")} tied with ${top} food.`
+      : `${winners[0].name} gathered the most food (${top})!`;
+  $("winner-list").innerHTML = ranked.map(p => `
+    <div class="player-row">
+      <img src="${asset(p.character.img)}" alt="" />
+      <div>
+        <div class="name" style="font-weight:800">${p.name} · ${p.character.name}</div>
+        <div class="meta" style="font-size:.85rem;color:#6d563d">${p.food.join("") || "no food"} · ${foodCount(p)} food</div>
+      </div>
+      <div>${winners.includes(p) && top > 0 ? `<span class="won-tag">Winner</span>` : ""}</div>
+    </div>`).join("");
+}
+
+$("btn-start").onclick = startSetup;
+$("btn-back-title").onclick = () => showScreen("title-screen");
+$("btn-choose").onclick = confirmChoose;
+$("player-count").onchange = resetParty;
+$("btn-begin").onclick = tryBeginGame;
+$("btn-replay").onclick = () => { showScreen("title-screen"); };
+$("btn-how").onclick = () => openModal({
+  title: "How to Play",
+  body: "On your turn, a pop-up shows your character — roll the dice there, then your token hops space by space along the U-shaped trail. After you move, you draw an experience card and follow it. Food shows as emojis by your avatar. When everyone reaches END, most food wins. The computer is the banker.",
+  icon: "icon_dice",
+  turnStyle: true
+});
+$("btn-music").onclick = () => music.toggle();
+
+initArt();
+music.init();
+randomShowcase(true);
+resetParty();
+</script>
+</body>
+</html>
