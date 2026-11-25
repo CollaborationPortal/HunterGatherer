@@ -1332,8 +1332,9 @@ function renderSeats() {
       el.innerHTML = "";
       continue;
     }
-    const active = i === state.current && !p.finished;
-    el.className = `corner ${active ? "active-seat" : ""} ${p.finished ? "won" : ""}`;
+    markFinished(p);
+    const active = i === state.current && !isFinished(p);
+    el.className = `corner ${active ? "active-seat" : ""} ${isFinished(p) ? "won" : ""}`;
     el.innerHTML = `
       <div class="avatar-wrap">
         <img class="avatar" src="${asset(p.character.img)}" alt="${p.character.name}" />
@@ -1344,7 +1345,7 @@ function renderSeats() {
   }
   paintFoodDeltas();
   if (!state.busy) {
-    const msg = state.players.every(p => p.finished)
+    const msg = state.players.every(isFinished)
       ? "Finished"
       : `${state.players[state.current]?.name || ""}'s turn`;
     const idle = $("turn-dock").querySelector(".dock-idle");
@@ -1365,6 +1366,30 @@ function beginGame() {
 
 function advancePlayerIndex() {
   state.current = (state.current + 1) % state.players.length;
+}
+
+function isFinished(p) {
+  return !!(p && (p.finished || p.pos >= BOARD.length - 1));
+}
+
+function markFinished(p) {
+  if (!p) return;
+  if (p.pos >= BOARD.length - 1) {
+    p.pos = BOARD.length - 1;
+    p.finished = true;
+    p.skip = 0;
+  }
+}
+
+/** Advance current to the next player who has not reached END. Returns false if none left. */
+function advanceToNextActivePlayer() {
+  state.players.forEach(markFinished);
+  if (state.players.every(isFinished)) return false;
+  for (let i = 0; i < state.players.length; i++) {
+    advancePlayerIndex();
+    if (!isFinished(state.players[state.current])) return true;
+  }
+  return false;
 }
 
 function sleep(ms) {
@@ -1596,12 +1621,11 @@ async function applyEffect(player, effect) {
 }
 
 async function movePlayer(player, steps) {
-  if (steps <= 0) return;
+  if (!player || isFinished(player) || steps <= 0) return;
   const path = pathForward(player.pos, steps);
   await animateAlong(player, path);
   if (player.pos >= BOARD.length - 1) {
-    player.finished = true;
-    player.pos = BOARD.length - 1;
+    markFinished(player);
     await showTurnDock({
       title: "You made it!",
       body: `${player.name} reached END!`,
@@ -1639,6 +1663,7 @@ async function showOutcome(player) {
 }
 
 async function doRollAndMove(player) {
+  if (!player || isFinished(player)) return;
   const roll = 1 + Math.floor(Math.random() * 6);
   await showTurnDock({
     title: `${player.name} rolls`,
@@ -1652,15 +1677,16 @@ async function doRollAndMove(player) {
 }
 
 async function prepareTurn() {
-  if (state.players.every(p => p.finished)) { endGame(); return; }
-  let guard = 0;
-  while (state.players[state.current].finished && guard < 12) {
-    advancePlayerIndex();
-    guard++;
+  state.players.forEach(markFinished);
+  if (state.players.every(isFinished)) { endGame(); return; }
+
+  // If current seat already finished, move to someone still on the trail
+  if (isFinished(state.players[state.current])) {
+    if (!advanceToNextActivePlayer()) { endGame(); return; }
   }
-  if (state.players.every(p => p.finished)) { endGame(); return; }
 
   const p = state.players[state.current];
+  if (!p || isFinished(p)) { endGame(); return; }
   renderSeats();
 
   if (p.skip > 0) {
@@ -1673,7 +1699,7 @@ async function prepareTurn() {
     });
     p.skip -= 1;
     state.busy = false;
-    advancePlayerIndex();
+    if (!advanceToNextActivePlayer()) { endGame(); return; }
     renderSeats();
     await prepareTurn();
     return;
@@ -1681,12 +1707,25 @@ async function prepareTurn() {
 
   state.busy = true;
   try {
+    // Re-check in case they finished while we were waiting
+    if (isFinished(p)) {
+      if (!advanceToNextActivePlayer()) { endGame(); return; }
+      await prepareTurn();
+      return;
+    }
+
     await showTurnDock({
       title: `${p.name}'s turn`,
       body: "Roll the dice to move along the trail.",
       hero: p.character.img,
       actions: [{ label: "Roll Dice", value: true }]
     });
+
+    if (isFinished(p)) {
+      if (!advanceToNextActivePlayer()) { endGame(); return; }
+      await prepareTurn();
+      return;
+    }
 
     const roll = 1 + Math.floor(Math.random() * 6);
     await showTurnDock({
@@ -1700,17 +1739,17 @@ async function prepareTurn() {
     setTurnDockIdle(`${p.name} is moving…`);
     await movePlayer(p, roll);
 
-    if (!p.finished) {
+    if (!isFinished(p)) {
       const result = await showOutcome(p);
       for (let i = 0; i < (result.bonusRolls || 0); i++) {
-        if (p.finished) break;
+        if (isFinished(p)) break;
         await doRollAndMove(p);
-        if (!p.finished) await showOutcome(p);
+        if (!isFinished(p)) await showOutcome(p);
       }
     }
 
-    if (state.players.every(pl => pl.finished)) { endGame(); return; }
-    advancePlayerIndex();
+    if (state.players.every(isFinished)) { endGame(); return; }
+    if (!advanceToNextActivePlayer()) { endGame(); return; }
     renderBoard();
     state.busy = false;
     renderSeats();
