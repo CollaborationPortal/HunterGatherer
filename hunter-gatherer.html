@@ -2599,7 +2599,7 @@ function endGame() {
     <div class="player-row">
       <img src="${asset(p.character.img)}" alt="" />
       <div>
-        <div class="name" style="font-weight:800">${p.name} · ${p.character.name}</div>
+        <div class="name" style="font-weight:800">${p.character.name}</div>
         <div class="meta" style="font-size:.85rem;color:#6d563d">${p.food.join("") || "no food"} · ${foodCount(p)} food</div>
         <div class="badge-row">${badgesFor(p).map(b => `<span class="badge-chip">${esc(b)}</span>`).join("")}</div>
       </div>
