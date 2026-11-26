@@ -671,6 +671,13 @@ h1, h2, h3 { font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif; mar
   padding: .3rem .6rem;
   margin: 0 0 .2rem;
 }
+#turn-dock .dock-copy p.dock-role,
+#turn-dock .dock-copy.card-mode p.dock-role {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #7a3418;
+  margin: 0 0 .25rem;
+}
 
 /* Streak chip on the avatar */
 .seat-badges {
@@ -858,6 +865,9 @@ const CHARACTERS = [
     name: "The Hunter",
     story: "You track deer and antelope across the open grass.",
     fact: "Hunter-gatherers often followed animal herds with the seasons.",
+    icon: "🏹",
+    bonus: "🏹 Hunting bonus!",
+    perk: "+2 food when a hunt goes well. Broken spears, broken weapons, and bad hunts can't hurt you.",
     looks: [
       { id: "k1", label: "Look 1", img: "char_hunter_k1" },
       { id: "k2", label: "Look 2", img: "char_hunter_k2" },
@@ -869,6 +879,9 @@ const CHARACTERS = [
     name: "The Gatherer",
     story: "You know which berries, roots, and nuts are safe to eat.",
     fact: "Gathered plants often provided more daily calories than hunting.",
+    icon: "🧺",
+    bonus: "🧺 Gathering bonus!",
+    perk: "+2 food when gathering goes well. Poisonous mushrooms can't hurt you.",
     looks: [
       { id: "k1", label: "Look 1", img: "char_gatherer_k1" },
       { id: "k2", label: "Look 2", img: "char_gatherer_k2" },
@@ -880,6 +893,9 @@ const CHARACTERS = [
     name: "The Fisher",
     story: "Rivers and lakes are your pantry — fish, frogs, and reeds.",
     fact: "Coastal and river groups used spears, nets, and traps for fish.",
+    icon: "🎣",
+    bonus: "🎣 Fishing bonus!",
+    perk: "+2 food when fishing goes well. No Water and Three Days Without Food can't hurt you.",
     looks: [
       { id: "k1", label: "Look 1", img: "char_fisher_k1" },
       { id: "k2", label: "Look 2", img: "char_fisher_k2" },
@@ -891,6 +907,9 @@ const CHARACTERS = [
     name: "The Tracker",
     story: "You read footprints and weather signs before the hunt.",
     fact: "Tracking skills helped bands find game with less wasted effort.",
+    icon: "🐾",
+    bonus: "🐾 Tracking bonus!",
+    perk: "+2 food when tracking goes well. Too Much Rain and Lost Track of the Deer can't hurt you.",
     looks: [
       { id: "k1", label: "Look 1", img: "char_tracker_k1" },
       { id: "k2", label: "Look 2", img: "char_tracker_k2" },
@@ -902,6 +921,9 @@ const CHARACTERS = [
     name: "The Fire Keeper",
     story: "You protect the campfire — cook food, warm the band, keep predators away.",
     fact: "Controlled fire let people cook tougher foods and live in colder places.",
+    icon: "🔥",
+    bonus: "🔥 Fire Keeper bonus!",
+    perk: "+2 food when fire cards go well. Early Winter, Snowstorm, and animal raids can't hurt you.",
     looks: [
       { id: "k1", label: "Look 1", img: "char_fire_k1" },
       { id: "k2", label: "Look 2", img: "char_fire_k2" },
@@ -913,6 +935,9 @@ const CHARACTERS = [
     name: "The Storyteller",
     story: "You remember trails, seasons, and campfire stories that keep the band safe.",
     fact: "Storytellers passed down knowledge about plants, animals, and safe routes.",
+    icon: "📜",
+    bonus: "📜 Storyteller bonus!",
+    perk: "+2 food when story and trail cards go well. Turmoil and Disease can't hurt you.",
     looks: [
       { id: "k1", label: "Look 1", img: "char_story_k1" },
       { id: "k2", label: "Look 2", img: "char_story_k2" },
@@ -949,62 +974,79 @@ const BOARD = PATH_POS.map((_, id) => {
  * Duplicates from the printable sheets are included once.
  */
 const OUTCOME_CARDS = [
-  { name: "FIND FRESH FRUIT", text: "Gain 2 food cards", img: "card_fresh_fruit", effect: { gain: 2 } },
-  { name: "FOUND A DEER HERD", text: "Roll the dice to see how many food cards you get", img: "card_deer_herd", effect: { rollGain: true } },
-  { name: "YOUR SPEAR BREAKS", text: "Lose 3 food cards", img: "card_spear_breaks", effect: { pay: 3 } },
-  { name: "FOUND ANTELOPE FOOTPRINTS", text: "Gain 1 food card", img: "card_antelope_prints", effect: { gain: 1 } },
-  { name: "FOUND MYSTERIOUS BERRIES", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", img: "card_mysterious_berries", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 } } } },
-  { name: "TOO MUCH RAIN TO HUNT", text: "Skip rolling the dice", img: "card_rain", effect: { skipNext: true } },
-  { name: "FOUND A PATCH OF WILD BERRIES", text: "Gain 1 food card", img: "card_wild_berries", effect: { gain: 1 } },
+  { name: "FIND FRESH FRUIT", text: "Gain 2 food cards", role: "gatherer", img: "card_fresh_fruit", effect: { gain: 2 } },
+  { name: "FOUND A DEER HERD", text: "Roll the dice to see how many food cards you get", role: "hunter", img: "card_deer_herd", effect: { rollGain: true } },
+  { name: "YOUR SPEAR BREAKS", text: "Lose 3 food cards", img: "card_spear_breaks", guard: { role: "hunter", why: "Hunters always carry a spare spear." }, effect: { pay: 3 } },
+  { name: "FOUND ANTELOPE FOOTPRINTS", text: "Gain 1 food card", role: "tracker", img: "card_antelope_prints", effect: { gain: 1 } },
+  { name: "FOUND MYSTERIOUS BERRIES", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", role: "gatherer", img: "card_mysterious_berries", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 } } } },
+  { name: "TOO MUCH RAIN TO HUNT", text: "Skip rolling the dice", img: "card_rain", guard: { role: "tracker", why: "You saw the rain coming and hunted early." }, effect: { skipNext: true } },
+  { name: "FOUND A PATCH OF WILD BERRIES", text: "Gain 1 food card", role: "gatherer", img: "card_wild_berries", effect: { gain: 1 } },
   { name: "ANIMAL HERD MOVED ON", text: "No food cards", img: "card_herd_moved", effect: {} },
-  { name: "LOST TRACK OF THE DEER HERD", text: "Lose 1 food card", img: "card_lost_deer", effect: { pay: 1 } },
-  { name: "GOOD WEATHER", text: "Roll the dice twice", img: "card_good_weather", effect: { bonusRolls: 1 } },
-  { name: "ANIMALS GOT TO YOUR FOOD SUPPLY", text: "Discard all but 1 food card", img: "card_animals_raid", effect: { leaveOne: true } },
-  { name: "THREE DAYS WITHOUT FOOD", text: "Skip rolling the dice", img: "card_no_food", effect: { skipNext: true } },
-  { name: "EARLY WINTER", text: "Lose one turn", img: "card_early_winter", effect: { skip: 1 } },
-  { name: "WENT FISHING", text: "Gain 1 food card", img: "card_fishing", effect: { gain: 1 } },
-  { name: "SABER TOOTH TIGER ATTACK", text: "Scare it off by tapping fast, or skip your next turn", img: "card_saber_tooth", effect: { game: "tiger" } },
-  { name: "UNSUCCESSFUL HUNT", text: "Lose 1 food card", img: "card_unsuccessful_hunt", effect: { pay: 1 } },
+  { name: "LOST TRACK OF THE DEER HERD", text: "Lose 1 food card", img: "card_lost_deer", guard: { role: "tracker", why: "You find the trail again." }, effect: { pay: 1 } },
+  { name: "GOOD WEATHER", text: "Go again!", img: "card_good_weather", effect: { bonusRolls: 1 } },
+  { name: "ANIMALS GOT TO YOUR FOOD SUPPLY", text: "Discard all but 1 food card", img: "card_animals_raid", guard: { role: "fire", why: "Your fire keeps the animals away." }, effect: { leaveOne: true } },
+  { name: "THREE DAYS WITHOUT FOOD", text: "Skip rolling the dice", img: "card_no_food", guard: { role: "fisher", why: "You always keep dried fish saved." }, effect: { skipNext: true } },
+  { name: "EARLY WINTER", text: "Lose one turn", img: "card_early_winter", guard: { role: "fire", why: "Your fire keeps everyone warm." }, effect: { skip: 1 } },
+  { name: "WENT FISHING", text: "Gain 1 food card", role: "fisher", img: "card_fishing", effect: { gain: 1 } },
+  { name: "SABER TOOTH TIGER ATTACK", text: "Scare it off by tapping fast, or skip your next turn", role: "fire", img: "card_saber_tooth", effect: { game: "tiger" } },
+  { name: "UNSUCCESSFUL HUNT", text: "Lose 1 food card", img: "card_unsuccessful_hunt", guard: { role: "hunter", why: "You know another good hunting spot nearby." }, effect: { pay: 1 } },
   { name: "RAN INTO A GROUP OF PEOPLE", text: "switch food cards with another player", img: "card_group_people", effect: { swap: true } },
-  { name: "TURMOIL IN YOUR TRIBE", text: "Lose your turn", img: "card_turmoil", effect: { skipNext: true } },
+  { name: "TURMOIL IN YOUR TRIBE", text: "Lose your turn", img: "card_turmoil", guard: { role: "storyteller", why: "Your story brings the tribe back together." }, effect: { skipNext: true } },
   { name: "FOREST FIRE", text: "Roll the dice to see how many food cards you have to discard", img: "card_forest_fire", effect: { rollPay: true } },
-  { name: "CAMPED NEAR A BUFFALO CROSSING", text: "Roll the dice to see how many food cards you gain", img: "card_buffalo", effect: { rollGain: true } },
-  { name: "FOUND A DEER HERD", text: "Gain 1 food card", img: "card_deer_herd", effect: { gain: 1 } },
-  { name: "WOOLY MAMMOTH", text: "Throw your spear! Hit the mammoth to win food", img: "card_mammoth", effect: { game: "mammoth" } },
-  { name: "SNOWSTORM, CAN'T HUNT", text: "Lose your turn", img: "card_snowstorm", effect: { skipNext: true } },
-  { name: "DISEASE HAS AFFECTED YOUR PEOPLE", text: "Lose your turn", img: "card_disease", effect: { skipNext: true } },
-  { name: "STUMBLED ACROSS ROOTS", text: "Gain 1 food card", img: "card_roots", effect: { gain: 1 } },
-  { name: "FOUND A LAKE FULL OF FISH", text: "Gain 2 food cards", img: "card_lake_fish", effect: { gain: 2 } },
-  { name: "NO WATER", text: "Lose your turn", img: "card_no_water", effect: { skipNext: true } },
+  { name: "CAMPED NEAR A BUFFALO CROSSING", text: "Roll the dice to see how many food cards you gain", role: "hunter", img: "card_buffalo", effect: { rollGain: true } },
+  { name: "FOUND A DEER HERD", text: "Gain 1 food card", role: "hunter", img: "card_deer_herd", effect: { gain: 1 } },
+  { name: "WOOLY MAMMOTH", text: "Throw your spear! Hit the mammoth to win food", role: "hunter", img: "card_mammoth", effect: { game: "mammoth" } },
+  { name: "SNOWSTORM, CAN'T HUNT", text: "Lose your turn", img: "card_snowstorm", guard: { role: "fire", why: "Everyone stays warm by your fire." }, effect: { skipNext: true } },
+  { name: "DISEASE HAS AFFECTED YOUR PEOPLE", text: "Lose your turn", img: "card_disease", guard: { role: "storyteller", why: "You remember which plants help sick people." }, effect: { skipNext: true } },
+  { name: "STUMBLED ACROSS ROOTS", text: "Gain 1 food card", role: "gatherer", img: "card_roots", effect: { gain: 1 } },
+  { name: "FOUND A LAKE FULL OF FISH", text: "Gain 2 food cards", role: "fisher", img: "card_lake_fish", effect: { gain: 2 } },
+  { name: "NO WATER", text: "Lose your turn", img: "card_no_water", guard: { role: "fisher", why: "You know where to find water." }, effect: { skipNext: true } },
   { name: "TRIBAL WAR", text: "switch food cards with another player", img: "card_tribal_war", effect: { swap: true } },
-  { name: "CAME TO A FORK IN THE ROAD", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", img: "card_fork_road", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 }, say: { even: "You gain 2 food!", odd: "You lose 2 food!" } } } },
-  { name: "POISONOUS MUSHROOMS", text: "Lose 2 food cards", img: "card_mushrooms", effect: { pay: 2 } },
-  { name: "FOUND WALNUT TREE", text: "Gain 1 food card", img: "card_walnut", effect: { gain: 1 } },
-  { name: "RIVER CROSSING", text: "Hop across the stepping stones! Cross safely to roll twice, or slip and lose your turn", img: "card_river", effect: { game: "river" } },
-  { name: "BROKEN WEAPON", text: "Lose your turn", img: "card_broken_weapon", effect: { skipNext: true } },
-  { name: "TRADED WITH ANOTHER TRIBE", text: "Roll the dice to see how many food cards you gain", img: "card_trade", effect: { rollGain: true } },
+  { name: "CAME TO A FORK IN THE ROAD", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", role: "storyteller", img: "card_fork_road", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 }, say: { even: "You gain 2 food!", odd: "You lose 2 food!" } } } },
+  { name: "POISONOUS MUSHROOMS", text: "Lose 2 food cards", img: "card_mushrooms", guard: { role: "gatherer", why: "You know a poisonous mushroom when you see one." }, effect: { pay: 2 } },
+  { name: "FOUND WALNUT TREE", text: "Gain 1 food card", role: "gatherer", img: "card_walnut", effect: { gain: 1 } },
+  { name: "RIVER CROSSING", text: "Hop across the stepping stones! Cross safely to go again, or slip and lose your turn", role: "storyteller", img: "card_river", effect: { game: "river" } },
+  { name: "BROKEN WEAPON", text: "Lose your turn", img: "card_broken_weapon", guard: { role: "hunter", why: "You fix your weapon in no time." }, effect: { skipNext: true } },
+  { name: "TRADED WITH ANOTHER TRIBE", text: "Roll the dice to see how many food cards you gain", role: "storyteller", img: "card_trade", effect: { rollGain: true } },
   { name: "BEAR ATTACK", text: "Lose 1 food card", img: "card_bear", effect: { pay: 1 } },
-  { name: "FOUND AN ELK HERD", text: "Gain 1 food card", img: "card_elk_herd", effect: { gain: 1 } },
+  { name: "FOUND AN ELK HERD", text: "Gain 1 food card", role: "tracker", img: "card_elk_herd", effect: { gain: 1 } },
   // Choice cards: first option is the safe pick, second is the risky pick
-  { name: "FRESH TRACKS!", text: "What do you do?", img: "card_antelope_prints", silly: "Those footprints look fresh. Or do they?", fact: "Trackers read footprints to learn which animal passed by and how long ago.", effect: { choice: [
+  { name: "FRESH TRACKS!", text: "What do you do?", role: "tracker", img: "card_antelope_prints", silly: "Those footprints look fresh. Or do they?", fact: "Trackers read footprints to learn which animal passed by and how long ago.", effect: { choice: [
     { label: "Pick berries (gain 1)", effect: { gain: 1 } },
     { label: "Follow the tracks! (win 3 or lose 2)", risky: true, effect: { oddEven: { odd: { pay: 2 }, even: { gain: 3 }, say: { even: "You found the herd! +3 food.", odd: "The tracks were old and you got lost. Lose 2 food." } } } }
   ] } },
-  { name: "STRANGE MUSHROOMS", text: "What do you do?", img: "card_mushrooms", silly: "Fun-guy or fungus-no? You decide.", fact: "Gatherers learned which plants were safe by teaching each other for generations.", effect: { choice: [
+  { name: "STRANGE MUSHROOMS", text: "What do you do?", role: "gatherer", img: "card_mushrooms", silly: "Fun-guy or fungus-no? You decide.", fact: "Gatherers learned which plants were safe by teaching each other for generations.", effect: { choice: [
     { label: "Walk on (nothing happens)", effect: {} },
     { label: "Taste them! (win 3 or lose 2)", risky: true, effect: { oddEven: { odd: { pay: 2 }, even: { gain: 3 }, say: { even: "Delicious! +3 food.", odd: "Yuck! Tummy ache. Lose 2 food." } } } }
   ] } },
-  { name: "A BUZZING BEEHIVE", text: "What do you do?", img: "card_walnut", silly: "Bzzzz! The bees are NOT sharing.", fact: "People have collected wild honey for thousands of years.", effect: { choice: [
+  { name: "A BUZZING BEEHIVE", text: "What do you do?", role: "gatherer", img: "card_walnut", silly: "Bzzzz! The bees are NOT sharing.", fact: "People have collected wild honey for thousands of years.", effect: { choice: [
     { label: "Gather nuts (gain 1)", effect: { gain: 1 } },
     { label: "Grab the honey! (win 3 or lose 1 and a turn)", risky: true, effect: { oddEven: { odd: { pay: 1, skipNext: true }, even: { gain: 3 }, say: { even: "Sweet honey! +3 food.", odd: "Ouch! The bees chased you. Lose 1 food and your next turn." } } } }
   ] } },
-  { name: "STORM CLOUDS", text: "What do you do?", img: "card_rain", silly: "Thunder rumbles. Your hair does something weird.", fact: "Weather decided when and where a group of people could travel and hunt.", effect: { choice: [
+  { name: "STORM CLOUDS", text: "What do you do?", role: "tracker", img: "card_rain", silly: "Thunder rumbles. Your hair does something weird.", fact: "Weather decided when and where a group of people could travel and hunt.", effect: { choice: [
     { label: "Stay dry (nothing happens)", effect: {} },
-    { label: "Keep hunting! (win 1 + roll twice, or lose a turn)", risky: true, effect: { oddEven: { odd: { skipNext: true }, even: { gain: 1, bonusRolls: 1 }, say: { even: "The storm passed! +1 food and roll twice.", odd: "You got soaked and had to wait it out. Lose your next turn." } } } }
+    { label: "Keep hunting! (win 1 + go again, or lose a turn)", risky: true, effect: { oddEven: { odd: { skipNext: true }, even: { gain: 1, bonusRolls: 1 }, say: { even: "The storm passed! +1 food and go again!", odd: "You got soaked and had to wait it out. Lose your next turn." } } } }
   ] } },
-  { name: "A BIG FISH!", text: "What do you do?", img: "card_lake_fish", silly: "It is as big as your leg! (Maybe your arm.)", fact: "People fished with spears, nets, hooks, and traps.", effect: { choice: [
+  { name: "A BIG FISH!", text: "What do you do?", role: "fisher", img: "card_lake_fish", silly: "It is as big as your leg! (Maybe your arm.)", fact: "People fished with spears, nets, hooks, and traps.", effect: { choice: [
     { label: "Fish near the shore (gain 1)", effect: { gain: 1 } },
     { label: "Spear the big one! (win 3 or lose 1)", risky: true, effect: { oddEven: { odd: { pay: 1 }, even: { gain: 3 }, say: { even: "You caught the big fish! +3 food.", odd: "It got away! Lose 1 food." } } } }
+  ] } },
+  // Role cards for roles with few matches
+  { name: "FISH TRAP", text: "What do you do?", role: "fisher", img: "card_fish_trap", silly: "The fish swam in. Now they can't figure out how to swim out.", fact: "People built fish traps from stones and sticks, and some are thousands of years old.", effect: { choice: [
+    { label: "Check your old trap (gain 1)", effect: { gain: 1 } },
+    { label: "Build a big trap! (win 3 or lose a turn)", risky: true, effect: { oddEven: { odd: { skipNext: true }, even: { gain: 3 }, say: { even: "The trap is full of fish! +3 food.", odd: "The river washed your trap away. Lose your next turn." } } } }
+  ] } },
+  { name: "COOK THE CATCH", text: "What do you do?", role: "fire", img: "card_cook_catch", silly: "Smells amazing. The neighbors are suddenly very friendly.", fact: "Cooking made food easier to chew, easier to digest, and safer to eat.", effect: { choice: [
+    { label: "Dry the meat by the fire (gain 1)", effect: { gain: 1 } },
+    { label: "Throw a big feast! (win 3 or lose 2)", risky: true, effect: { oddEven: { odd: { pay: 2 }, even: { gain: 3 }, say: { even: "Everyone shares the feast! +3 food.", odd: "Oops, the meat burned! Lose 2 food." } } } }
+  ] } },
+  { name: "A COLD NIGHT", text: "What do you do?", role: "fire", img: "card_cold_night", silly: "So cold your teeth are playing music.", fact: "Fire let people stay warm and live in colder places.", effect: { choice: [
+    { label: "Huddle together (nothing happens)", effect: {} },
+    { label: "Gather wood all night! (win 2 or lose a turn)", risky: true, effect: { oddEven: { odd: { skipNext: true }, even: { gain: 2 }, say: { even: "Your fire kept everyone warm. They share their food! +2 food.", odd: "Too tired to move. Lose your next turn." } } } }
+  ] } },
+  { name: "CAMPFIRE STORIES", text: "What do you do?", role: "storyteller", img: "card_campfire_stories", silly: "Once upon a time... there was a REALLY big mammoth.", fact: "Stories helped people remember where to find food, water, and safe paths.", effect: { choice: [
+    { label: "Listen to an old story (gain 1)", effect: { gain: 1 } },
+    { label: "Tell a new story! (win 3 or lose 1)", risky: true, effect: { oddEven: { odd: { pay: 1 }, even: { gain: 3 }, say: { even: "Everyone loved it and shared their food! +3 food.", odd: "Everyone fell asleep. Lose 1 food." } } } }
   ] } }
 ];
 
@@ -1379,7 +1421,7 @@ function showTurnDock({ title, body, hero, dice, actions, cardStyle, animateDice
       : "";
     const bodyText = shouldAnimate ? "Rolling…" : (body || "");
     const extraHtml = extra
-      ? `${extra.silly ? `<p class="dock-silly">${esc(extra.silly)}</p>` : ""}${extra.fact ? `<p class="dock-fact">💡 Did you know? ${esc(extra.fact)}</p>` : ""}`
+      ? `${extra.role ? `<p class="dock-role">${esc(extra.role)}</p>` : ""}${extra.silly ? `<p class="dock-silly">${esc(extra.silly)}</p>` : ""}${extra.fact ? `<p class="dock-fact">💡 Did you know? ${esc(extra.fact)}</p>` : ""}`
       : "";
     dock.innerHTML = `
       <div class="dock-inner">
@@ -1618,6 +1660,7 @@ function renderSetup() {
         <h3>${c.name}</h3>
         <span class="badge">Starts with 2 food</span>
         <p>${c.story}</p>
+        <p><strong>Power:</strong> ${c.perk}</p>
         <p class="muted"><em>Fun fact:</em> ${c.fact}</p>
       </div>
     </div>`;
@@ -1966,14 +2009,16 @@ async function applyEffect(player, effect) {
       renderSeats();
     }
   }
+  let wonGame = false;
   if (effect.game) {
     const rating = await playMiniGame(effect.game, player);
+    wonGame = rating !== "miss";
     const nested = await applyEffect(player, MINI[effect.game].out[rating]);
     bonusRolls += nested.bonusRolls || 0;
   }
 
   renderSeats();
-  return { bonusRolls };
+  return { bonusRolls, wonGame };
 }
 
 async function movePlayer(player, steps) {
@@ -2176,7 +2221,7 @@ const MINI = {
     help: "Memorize the safe stones!",
     run: gameStones,
     msg: {
-      great: "You made it across! Roll the dice twice.",
+      great: "You made it across! Go again!",
       miss: "SPLASH! You lose your next turn."
     },
     out: { great: { bonusRolls: 1 }, miss: { skipNext: true } }
@@ -2237,7 +2282,17 @@ async function showOutcome(player) {
   const clearBurst = playOutcomeBurst(player, card.img);
   const before = foodCount(player);
   const skipBefore = player.skip;
-  const extra = { silly: card.silly || SILLY[card.img], fact: card.fact || factFor(card) };
+  const roleOf = id => CHARACTERS.find(c => c.id === id);
+  const tagRole = card.role || card.guard?.role;
+  const isMine = tagRole === player.character.id;
+  const roleNote = card.guard
+    ? (isMine ? "(Protected!)" : "(no protection)")
+    : (isMine ? "(Bonus if you win!)" : "(no bonus)");
+  const extra = {
+    role: tagRole ? `${roleOf(tagRole).name.replace(/^The /, "")} card ${roleNote}` : "",
+    silly: card.silly || SILLY[card.img],
+    fact: card.fact || factFor(card)
+  };
   if (card.img === "card_saber_tooth" || card.img === "card_bear") sfx.roar();
   else if (card.img === "card_river") sfx.splash();
 
@@ -2265,10 +2320,36 @@ async function showOutcome(player) {
     clearBurst();
   }
 
+  // The matching role shrugs off this bad card
+  if (card.guard && card.guard.role === player.character.id) {
+    effect = {};
+    sfx.gain();
+    await showTurnDock({
+      title: `${player.character.icon} ${player.character.name} to the rescue!`,
+      body: `${card.guard.why}\nNo harm done.`,
+      hero: player.character.img,
+      actions: [{ label: "Phew!", value: true }]
+    });
+  }
+
   const result = await applyEffect(player, effect);
 
   const s = player.stats;
   const net = foodCount(player) - before;
+
+  // The matching role earns extra food when the card goes well
+  if (card.role === player.character.id && (net > 0 || result.wonGame)) {
+    gainFood(player, 2);
+    confetti(40);
+    sfx.fanfare();
+    renderSeats();
+    await showTurnDock({
+      title: `${player.character.bonus} +2`,
+      body: `${player.name} is ${player.character.name}, so this card pays extra food.`,
+      hero: player.character.img,
+      actions: [{ label: "Yes!", value: true }]
+    });
+  }
   const hurt = net < 0 || player.skip > skipBefore;
   if (hurt) {
     s.disasters++;
