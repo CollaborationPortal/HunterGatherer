@@ -2327,11 +2327,13 @@ async function showOutcome(player) {
   const roleOf = id => CHARACTERS.find(c => c.id === id);
   const tagRole = card.role || card.guard?.role;
   const isMine = tagRole === player.character.id;
-  const roleNote = card.guard
-    ? (isMine ? "(Protected!)" : "(no protection)")
-    : (isMine ? "(Bonus if you win!)" : "(no bonus)");
+  const roleName = tagRole ? roleOf(tagRole).name.replace(/^The /, "") : "";
+  const roleLabel = !tagRole ? ""
+    : card.guard ? `${roleName} card ${isMine ? "(Protected!)" : "(no protection)"}`
+    : isMine ? `${roleName} card (Bonus if you win!)`
+    : `${roleName} Card - No Bonus For You`;
   const extra = {
-    role: tagRole ? `${roleOf(tagRole).name.replace(/^The /, "")} card ${roleNote}` : "",
+    role: roleLabel,
     silly: card.silly || SILLY[card.img],
     fact: card.fact || factFor(card)
   };
@@ -2387,7 +2389,7 @@ async function showOutcome(player) {
     renderSeats();
     await showTurnDock({
       title: `${player.character.bonus} +2`,
-      body: `${player.name} is ${player.character.name}, so this card pays extra food.`,
+      body: `This is a ${player.name} card, so you earn 2 extra food!`,
       hero: player.character.img,
       actions: [{ label: "Yes!", value: true }]
     });
