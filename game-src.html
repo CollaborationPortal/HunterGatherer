@@ -947,7 +947,8 @@ const CHARACTERS = [
     looks: [
       { id: "k1", label: "Look 1", img: "char_hunter_k1" },
       { id: "k2", label: "Look 2", img: "char_hunter_k2" },
-      { id: "k3", label: "Look 3", img: "char_hunter_k3" }
+      { id: "k3", label: "Look 3", img: "char_hunter_k3" },
+      { id: "k4", label: "Look 4", img: "char_hunter_girl" }
     ]
   },
   {
@@ -961,7 +962,8 @@ const CHARACTERS = [
     looks: [
       { id: "k1", label: "Look 1", img: "char_gatherer_k1" },
       { id: "k2", label: "Look 2", img: "char_gatherer_k2" },
-      { id: "k3", label: "Look 3", img: "char_gatherer_k3" }
+      { id: "k3", label: "Look 3", img: "char_gatherer_k3" },
+      { id: "k4", label: "Look 4", img: "char_gatherer_boy" }
     ]
   },
   {
@@ -975,7 +977,8 @@ const CHARACTERS = [
     looks: [
       { id: "k1", label: "Look 1", img: "char_fisher_k1" },
       { id: "k2", label: "Look 2", img: "char_fisher_k2" },
-      { id: "k3", label: "Look 3", img: "char_fisher_k3" }
+      { id: "k3", label: "Look 3", img: "char_fisher_k3" },
+      { id: "k4", label: "Look 4", img: "char_fisher_girl" }
     ]
   },
   {
@@ -989,7 +992,8 @@ const CHARACTERS = [
     looks: [
       { id: "k1", label: "Look 1", img: "char_tracker_k1" },
       { id: "k2", label: "Look 2", img: "char_tracker_k2" },
-      { id: "k3", label: "Look 3", img: "char_tracker_k3" }
+      { id: "k3", label: "Look 3", img: "char_tracker_k3" },
+      { id: "k4", label: "Look 4", img: "char_tracker_girl" }
     ]
   },
   {
@@ -1003,7 +1007,8 @@ const CHARACTERS = [
     looks: [
       { id: "k1", label: "Look 1", img: "char_fire_k1" },
       { id: "k2", label: "Look 2", img: "char_fire_k2" },
-      { id: "k3", label: "Look 3", img: "char_fire_k3" }
+      { id: "k3", label: "Look 3", img: "char_fire_k3" },
+      { id: "k4", label: "Look 4", img: "char_fire_girl" }
     ]
   },
   {
@@ -1017,7 +1022,8 @@ const CHARACTERS = [
     looks: [
       { id: "k1", label: "Look 1", img: "char_story_k1" },
       { id: "k2", label: "Look 2", img: "char_story_k2" },
-      { id: "k3", label: "Look 3", img: "char_story_k3" }
+      { id: "k3", label: "Look 3", img: "char_story_k3" },
+      { id: "k4", label: "Look 4", img: "char_story_girl" }
     ]
   }
 ];
@@ -1673,16 +1679,16 @@ function renderSetup() {
   chips.innerHTML = state.players.map((p, i) => {
     const editing = p === editor ? "editing" : "";
     if (!p.character) {
-      return `<button type="button" class="player-chip ${p.colorClass} ${editing}" data-player="${i}">Forager ${i + 1}: ${editing ? "picking now…" : "waiting"}</button>`;
+      return `<button type="button" class="player-chip ${p.colorClass} ${editing}" data-player="${i}">Player ${i + 1}: ${editing ? "picking now…" : "waiting"}</button>`;
     }
-    return `<button type="button" class="player-chip ${p.colorClass} ${editing}" data-player="${i}" title="Tap to change Forager ${i + 1}'s pick"><img src="${asset(p.character.img)}" alt="" /> <span class="check">✓</span> Forager ${i + 1}: ${p.name}</button>`;
+    return `<button type="button" class="player-chip ${p.colorClass} ${editing}" data-player="${i}" title="Tap to change Player ${i + 1}'s pick"><img src="${asset(p.character.img)}" alt="" /> <span class="check">✓</span> Player ${i + 1}: ${p.name}</button>`;
   }).join("");
 
   const banner = $("pick-hint");
   banner.className = `pick-banner ${editor ? editor.colorClass : ""}`;
   if (!editor) banner.textContent = "Everyone's ready! Press Play Game — or tap a forager below to change.";
-  else if (editor.character) banner.textContent = `Forager ${editor.id + 1}, tap a different character to switch.`;
-  else banner.textContent = `Forager ${editor.id + 1}, tap a character to pick it!`;
+  else if (editor.character) banner.textContent = `Player ${editor.id + 1}, tap a different character to switch.`;
+  else banner.textContent = `Player ${editor.id + 1}, tap a character to pick it!`;
 
   const orderedChars = (state.characterOrder.length
     ? state.characterOrder.map(id => CHARACTERS.find(c => c.id === id)).filter(Boolean)
@@ -1694,7 +1700,7 @@ function renderSetup() {
     const previewLookId = owner ? owner.character.lookId : (state.cardShowcase[c.id] || c.looks[0].id);
     const preview = lookById(c, previewLookId).img;
     return `<div class="char-card ${cls}" data-id="${c.id}">
-      ${owner ? `<span class="owner-tag ${owner.colorClass}">Forager ${owner.id + 1}</span>` : ""}
+      ${owner ? `<span class="owner-tag ${owner.colorClass}">Player ${owner.id + 1}</span>` : ""}
       <img class="hero" src="${asset(preview)}" alt="${c.name}" />
       <div class="look-row">
         ${c.looks.map(l => `<button type="button" class="look-btn ${previewLookId === l.id ? "active" : ""}" data-look="${l.id}" title="${l.label}"><img src="${asset(l.img)}" alt="${l.label}" /></button>`).join("")}
