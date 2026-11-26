@@ -653,10 +653,109 @@ h1, h2, h3 { font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif; mar
   color: #f4fff4;
   border-color: rgba(42, 64, 48, .45);
 }
+
+/* Silly lines + "Did you know?" facts under the card text */
+#turn-dock .dock-copy p.dock-silly,
+#turn-dock .dock-copy.card-mode p.dock-silly {
+  font-size: 1.3rem;
+  font-style: italic;
+  color: #7a3418;
+  margin: .1rem 0 .35rem;
+}
+#turn-dock .dock-copy p.dock-fact,
+#turn-dock .dock-copy.card-mode p.dock-fact {
+  font-size: 1.05rem;
+  color: #3f5e46;
+  background: rgba(107, 143, 113, .16);
+  border-radius: 10px;
+  padding: .3rem .6rem;
+  margin: 0 0 .2rem;
+}
+
+/* Streak chip on the avatar */
+.seat-badges {
+  position: absolute;
+  left: .3rem; right: .3rem; bottom: .3rem;
+  display: flex; flex-direction: column; gap: .2rem;
+  z-index: 5;
+  pointer-events: none;
+}
+.seat-badges div {
+  font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif;
+  font-weight: 800;
+  font-size: .78rem;
+  line-height: 1.15;
+  padding: .15rem .45rem;
+  border-radius: 999px;
+  background: rgba(246, 236, 215, .93);
+  border: 1px solid rgba(92, 61, 34, .35);
+  color: var(--ink);
+}
+.seat-badges .seat-streak { background: #ffe1b3; color: #7a3418; }
+
+/* Screen shake + confetti */
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-9px, 3px) rotate(-.4deg); }
+  30% { transform: translate(8px, -4px) rotate(.4deg); }
+  45% { transform: translate(-7px, 2px); }
+  60% { transform: translate(6px, -2px); }
+  75% { transform: translate(-3px, 1px); }
+}
+#play-screen.shake { animation: shake .55s ease; }
+.confetti-layer { position: fixed; inset: 0; pointer-events: none; z-index: 300; overflow: hidden; }
+.confetti {
+  position: absolute; top: -12px;
+  width: 11px; height: 16px; border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  to { transform: translate(var(--dx), 110vh) rotate(720deg); }
+}
+
+/* Mini-games */
+.modal.mini-box { width: min(560px, 100%); }
+#mini-stage { margin: .6rem 0; }
+.tbar {
+  position: relative; height: 58px; border-radius: 12px;
+  background: #c9ae7d; border: 3px solid #8b5a2b; overflow: hidden;
+}
+.tzone { position: absolute; top: 0; bottom: 0; }
+.tzone.ok { background: #8faf87; }
+.tzone.great { background: #f2c14e; }
+.tmark {
+  position: absolute; top: -4px; bottom: -4px; width: 8px; margin-left: -4px;
+  background: #b5522a; border-radius: 4px; box-shadow: 0 0 0 2px #fff8ef;
+}
+.stones { display: flex; flex-direction: column-reverse; gap: .4rem; }
+.srow { display: flex; justify-content: center; gap: .45rem; }
+.stone {
+  width: clamp(46px, 14vw, 72px); height: clamp(36px, 10.5vw, 54px); font-size: clamp(1.2rem, 4.5vw, 1.6rem); border-radius: 50%;
+  background: #cdbfa6; border: 3px solid #8b5a2b; color: var(--ink);
+  box-shadow: 0 4px 0 #6d563d; padding: 0;
+}
+.stone:disabled { opacity: 1; cursor: default; }
+.stone.glow { background: #9bd58a; box-shadow: 0 0 0 4px #f2c14e, 0 4px 0 #6d563d; }
+.stone.ok { background: #9bd58a; }
+.stone.bad { background: #e58a7d; }
+.tapmeter { height: 26px; border-radius: 13px; background: #c9ae7d; border: 3px solid #8b5a2b; overflow: hidden; }
+.tapfill { height: 100%; width: 0; background: linear-gradient(90deg, #8faf87, #f2c14e); transition: width .08s linear; }
+.tapclock { height: 8px; width: 100%; margin-top: .4rem; border-radius: 4px; background: #b5522a; }
+.tapinfo { margin-top: .3rem; font-weight: 800; font-size: 1.3rem; }
+.mini-big { font-size: 1.6rem; padding: .9rem 1.8rem; }
+.badge-row { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .25rem; }
+.badge-chip {
+  font-size: .78rem; font-weight: 800; padding: .1rem .5rem; border-radius: 999px;
+  background: #f2c14e; color: #3b2a1a; border: 1px solid rgba(92, 61, 34, .35);
+}
+@media (prefers-reduced-motion: reduce) {
+  #play-screen.shake { animation: none; }
+}
 </style>
 </head>
 <body>
 <div class="app-toggles">
+  <button type="button" id="btn-sound" aria-pressed="true" aria-label="Toggle sound effects">Sound: On</button>
   <button type="button" id="btn-music" aria-pressed="false" aria-label="Toggle music">Music: Off</button>
 </div>
 <div id="title-screen" class="screen active">
@@ -674,7 +773,6 @@ h1, h2, h3 { font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif; mar
       <p class="muted">On your turn, roll and move. Then see what happens. When everyone reaches END, the forager with the most food wins!</p>
       <div class="row-actions" style="margin-top:1rem">
         <button class="btn-primary" id="btn-start">Start the Hunt</button>
-        <button class="btn-ghost" id="btn-how" style="color:var(--ink);border-color:rgba(92,61,34,.3);background:#efe2c4">How to Play</button>
       </div>
     </div>
   </div>
@@ -737,6 +835,15 @@ h1, h2, h3 { font-family: Calibri, Carlito, "Segoe UI", Candara, sans-serif; mar
     <div class="dice-face" id="modal-dice" hidden>1</div>
     <p id="modal-body" class="card-body"></p>
     <div class="choice-btns" id="modal-actions"></div>
+  </div>
+</div>
+
+<div class="modal-back center-modal" id="mini">
+  <div class="modal mini-box">
+    <h3 id="mini-title" class="card-title"></h3>
+    <p id="mini-help" class="card-body"></p>
+    <div id="mini-stage"></div>
+    <div class="choice-btns" id="mini-actions"></div>
   </div>
 </div>
 
@@ -856,29 +963,141 @@ const OUTCOME_CARDS = [
   { name: "THREE DAYS WITHOUT FOOD", text: "Skip rolling the dice", img: "card_no_food", effect: { skipNext: true } },
   { name: "EARLY WINTER", text: "Lose one turn", img: "card_early_winter", effect: { skip: 1 } },
   { name: "WENT FISHING", text: "Gain 1 food card", img: "card_fishing", effect: { gain: 1 } },
-  { name: "SABER TOOTH TIGER ATTACK", text: "Skip your next turn", img: "card_saber_tooth", effect: { skip: 1 } },
+  { name: "SABER TOOTH TIGER ATTACK", text: "Scare it off by tapping fast, or skip your next turn", img: "card_saber_tooth", effect: { game: "tiger" } },
   { name: "UNSUCCESSFUL HUNT", text: "Lose 1 food card", img: "card_unsuccessful_hunt", effect: { pay: 1 } },
   { name: "RAN INTO A GROUP OF PEOPLE", text: "switch food cards with another player", img: "card_group_people", effect: { swap: true } },
   { name: "TURMOIL IN YOUR TRIBE", text: "Lose your turn", img: "card_turmoil", effect: { skipNext: true } },
   { name: "FOREST FIRE", text: "Roll the dice to see how many food cards you have to discard", img: "card_forest_fire", effect: { rollPay: true } },
   { name: "CAMPED NEAR A BUFFALO CROSSING", text: "Roll the dice to see how many food cards you gain", img: "card_buffalo", effect: { rollGain: true } },
   { name: "FOUND A DEER HERD", text: "Gain 1 food card", img: "card_deer_herd", effect: { gain: 1 } },
-  { name: "WOOLY MAMMOTH", text: "Gain 3 food cards", img: "card_mammoth", effect: { gain: 3 } },
+  { name: "WOOLY MAMMOTH", text: "Throw your spear! Hit the mammoth to win food", img: "card_mammoth", effect: { game: "mammoth" } },
   { name: "SNOWSTORM, CAN'T HUNT", text: "Lose your turn", img: "card_snowstorm", effect: { skipNext: true } },
   { name: "DISEASE HAS AFFECTED YOUR PEOPLE", text: "Lose your turn", img: "card_disease", effect: { skipNext: true } },
   { name: "STUMBLED ACROSS ROOTS", text: "Gain 1 food card", img: "card_roots", effect: { gain: 1 } },
   { name: "FOUND A LAKE FULL OF FISH", text: "Gain 2 food cards", img: "card_lake_fish", effect: { gain: 2 } },
   { name: "NO WATER", text: "Lose your turn", img: "card_no_water", effect: { skipNext: true } },
   { name: "TRIBAL WAR", text: "switch food cards with another player", img: "card_tribal_war", effect: { swap: true } },
-  { name: "CAME TO A FORK IN THE ROAD", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", img: "card_fork_road", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 } } } },
+  { name: "CAME TO A FORK IN THE ROAD", text: "Roll the dice if it's odd you lose 2 food cards\nIf it's even gain 2 food cards", img: "card_fork_road", effect: { oddEven: { odd: { pay: 2 }, even: { gain: 2 }, say: { even: "You gain 2 food!", odd: "You lose 2 food!" } } } },
   { name: "POISONOUS MUSHROOMS", text: "Lose 2 food cards", img: "card_mushrooms", effect: { pay: 2 } },
   { name: "FOUND WALNUT TREE", text: "Gain 1 food card", img: "card_walnut", effect: { gain: 1 } },
-  { name: "RIVER CROSSING", text: "Roll the dice. If it's odd you lose your turn. If it's even roll the dice twice.", img: "card_river", effect: { river: true } },
+  { name: "RIVER CROSSING", text: "Hop across the stepping stones! Cross safely to roll twice, or slip and lose your turn", img: "card_river", effect: { game: "river" } },
   { name: "BROKEN WEAPON", text: "Lose your turn", img: "card_broken_weapon", effect: { skipNext: true } },
   { name: "TRADED WITH ANOTHER TRIBE", text: "Roll the dice to see how many food cards you gain", img: "card_trade", effect: { rollGain: true } },
   { name: "BEAR ATTACK", text: "Lose 1 food card", img: "card_bear", effect: { pay: 1 } },
-  { name: "FOUND AN ELK HERD", text: "Gain 1 food card", img: "card_elk_herd", effect: { gain: 1 } }
+  { name: "FOUND AN ELK HERD", text: "Gain 1 food card", img: "card_elk_herd", effect: { gain: 1 } },
+  // Choice cards: first option is the safe pick, second is the risky pick
+  { name: "FRESH TRACKS!", text: "What do you do?", img: "card_antelope_prints", silly: "Those footprints look fresh. Or do they?", fact: "Trackers read footprints to learn which animal passed by and how long ago.", effect: { choice: [
+    { label: "Pick berries (gain 1)", effect: { gain: 1 } },
+    { label: "Follow the tracks! (win 3 or lose 2)", risky: true, effect: { oddEven: { odd: { pay: 2 }, even: { gain: 3 }, say: { even: "You found the herd! +3 food.", odd: "The tracks were old and you got lost. Lose 2 food." } } } }
+  ] } },
+  { name: "STRANGE MUSHROOMS", text: "What do you do?", img: "card_mushrooms", silly: "Fun-guy or fungus-no? You decide.", fact: "Gatherers learned which plants were safe by teaching each other for generations.", effect: { choice: [
+    { label: "Walk on (nothing happens)", effect: {} },
+    { label: "Taste them! (win 3 or lose 2)", risky: true, effect: { oddEven: { odd: { pay: 2 }, even: { gain: 3 }, say: { even: "Delicious! +3 food.", odd: "Yuck! Tummy ache. Lose 2 food." } } } }
+  ] } },
+  { name: "A BUZZING BEEHIVE", text: "What do you do?", img: "card_walnut", silly: "Bzzzz! The bees are NOT sharing.", fact: "People have collected wild honey for thousands of years.", effect: { choice: [
+    { label: "Gather nuts (gain 1)", effect: { gain: 1 } },
+    { label: "Grab the honey! (win 3 or lose 1 and a turn)", risky: true, effect: { oddEven: { odd: { pay: 1, skipNext: true }, even: { gain: 3 }, say: { even: "Sweet honey! +3 food.", odd: "Ouch! The bees chased you. Lose 1 food and your next turn." } } } }
+  ] } },
+  { name: "STORM CLOUDS", text: "What do you do?", img: "card_rain", silly: "Thunder rumbles. Your hair does something weird.", fact: "Weather decided when and where a group of people could travel and hunt.", effect: { choice: [
+    { label: "Stay dry (nothing happens)", effect: {} },
+    { label: "Keep hunting! (win 1 + roll twice, or lose a turn)", risky: true, effect: { oddEven: { odd: { skipNext: true }, even: { gain: 1, bonusRolls: 1 }, say: { even: "The storm passed! +1 food and roll twice.", odd: "You got soaked and had to wait it out. Lose your next turn." } } } }
+  ] } },
+  { name: "A BIG FISH!", text: "What do you do?", img: "card_lake_fish", silly: "It is as big as your leg! (Maybe your arm.)", fact: "People fished with spears, nets, hooks, and traps.", effect: { choice: [
+    { label: "Fish near the shore (gain 1)", effect: { gain: 1 } },
+    { label: "Spear the big one! (win 3 or lose 1)", risky: true, effect: { oddEven: { odd: { pay: 1 }, even: { gain: 3 }, say: { even: "You caught the big fish! +3 food.", odd: "It got away! Lose 1 food." } } } }
+  ] } }
 ];
+
+/** Silly one-liners shown on each card. */
+const SILLY = {
+  card_fresh_fruit: "Yum! You only dropped a few on your foot.",
+  card_deer_herd: "The deer looked at you. You looked at the deer. Dinner!",
+  card_spear_breaks: "SNAP! Your spear now has a very short career.",
+  card_antelope_prints: "Those footprints look fresh. And a little bit fancy.",
+  card_mysterious_berries: "They're purple. They might be magic. Or tummy trouble.",
+  card_rain: "Splish splash! Even the squirrels are hiding.",
+  card_wild_berries: "One for the basket, one for your mouth.",
+  card_herd_moved: "The herd left a note: \"Gone to find better grass.\"",
+  card_lost_deer: "The deer was sneaky. You were not.",
+  card_good_weather: "The sun is out and so are your best moves!",
+  card_animals_raid: "A family of foxes is having a party with your snacks.",
+  card_no_food: "Your tummy is growling louder than a bear.",
+  card_early_winter: "Brrr! Even your breath is freezing.",
+  card_fishing: "You caught a fish! (It looks very surprised.)",
+  card_saber_tooth: "ROAR! That kitty has HUGE teeth.",
+  card_unsuccessful_hunt: "The rabbit did a victory dance.",
+  card_group_people: "New friends! Now where did your snacks go?",
+  card_turmoil: "Everyone is arguing about whose turn it is to cook.",
+  card_forest_fire: "Hot hot hot! Run, snacks, run!",
+  card_buffalo: "Thundering hooves! That's a LOT of buffalo.",
+  card_mammoth: "The mammoth sneezed on you. Gross, but great hunt!",
+  card_snowstorm: "Snowball fight instead? Sure.",
+  card_disease: "Everybody is sniffling. Ahh-CHOO!",
+  card_roots: "Digging, digging... jackpot!",
+  card_lake_fish: "The fish are practically jumping into your basket!",
+  card_no_water: "The stream is dry. Even the frogs are confused.",
+  card_tribal_war: "Big argument! Quick, grab the snacks!",
+  card_fork_road: "Left or right? You flip a pebble.",
+  card_mushrooms: "Tasty-looking mushrooms are not always tasty.",
+  card_walnut: "CRACK! One perfectly good walnut.",
+  card_river: "The water looks cold and splashy.",
+  card_broken_weapon: "Your club is now two smaller clubs.",
+  card_trade: "You swapped a funny hat for a bundle of food.",
+  card_bear: "A bear wants your lunch. Say byyyye!",
+  card_elk_herd: "The elk strike a pose. Majestic!"
+};
+
+/** "Did you know?" facts about real hunter-gatherers. */
+const FACTS = {
+  card_fresh_fruit: "Gathered plants like fruit, nuts, and roots often gave people most of their daily food.",
+  card_wild_berries: "Gathered plants like berries and nuts often gave people most of their daily food.",
+  card_deer_herd: "Hunters followed animal herds as the seasons changed.",
+  card_antelope_prints: "Trackers read footprints to learn which animal passed by and how long ago.",
+  card_elk_herd: "Hunters followed animal herds as the seasons changed.",
+  card_spear_breaks: "Spear points were made by chipping stone, and broken ones were often fixed or replaced.",
+  card_broken_weapon: "Tools were made from stone, wood, and bone, and making them took lots of skill.",
+  card_mysterious_berries: "Gatherers learned which plants were safe by teaching each other for generations.",
+  card_mushrooms: "Gatherers learned which plants were safe by teaching each other for generations.",
+  card_rain: "Weather decided when and where a group of people could travel and hunt.",
+  card_snowstorm: "Weather decided when and where a group of people could travel and hunt.",
+  card_early_winter: "Many groups of people moved to different camps in different seasons.",
+  card_herd_moved: "Hunting didn't always work, so people also depended on gathered plants.",
+  card_lost_deer: "Hunting didn't always work, so people also depended on gathered plants.",
+  card_unsuccessful_hunt: "Hunting didn't always work, so people also depended on gathered plants.",
+  card_good_weather: "Good weather made traveling and finding food much easier.",
+  card_animals_raid: "People dried and smoked food to keep it longer.",
+  card_fishing: "People fished with spears, nets, hooks, and traps.",
+  card_lake_fish: "People fished with spears, nets, hooks, and traps.",
+  card_saber_tooth: "During the Ice Age, people shared the land with huge predators like saber-toothed cats.",
+  card_bear: "Bears and other big animals were real dangers for early people.",
+  card_group_people: "Neighboring groups sometimes shared food and sometimes competed for it.",
+  card_tribal_war: "Neighboring groups sometimes shared food and sometimes competed for it.",
+  card_trade: "Groups traded things like shells, tools, and stones over long distances.",
+  card_turmoil: "Groups of people made choices together, and everyone's help mattered.",
+  card_forest_fire: "Wildfires were dangerous, but people also used fire on purpose to help plants and animals thrive.",
+  card_buffalo: "Plains hunters sometimes worked together to drive bison into traps.",
+  card_mammoth: "Woolly mammoths lived in the Ice Age. People used their meat, hides, and tusks.",
+  card_disease: "Many groups of people knew plants that could be used as medicine.",
+  card_roots: "Roots, seeds, and nuts could be stored for the cold months.",
+  card_walnut: "Roots, seeds, and nuts could be stored for the cold months.",
+  card_no_water: "Groups of people camped near rivers and springs, and moved on when water ran low.",
+  card_fork_road: "Trails often followed rivers, ridges, and animal paths.",
+  card_river: "Rivers gave people food and water, but crossing them could be risky.",
+  card_no_food: "Hunter-gatherers sometimes went hungry, so sharing food was very important."
+};
+const GENERAL_FACTS = [
+  "Hunter-gatherers lived in small groups, often of 20 to 50 people.",
+  "Food was shared within the group, because sharing helped everyone survive.",
+  "Hunter-gatherers lived on every continent except Antarctica for most of human history.",
+  "Children learned skills like tracking and gathering by watching and helping adults."
+];
+function factFor(card) {
+  return FACTS[card.img] || GENERAL_FACTS[Math.floor(Math.random() * GENERAL_FACTS.length)];
+}
+
+function newStats() {
+  return { disasters: 0, risky: 0, wins: 0, streakBonuses: 0, mammoth: false, river: false, tiger: false };
+}
 
 const state = {
   players: [],
@@ -893,6 +1112,117 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const reducedMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Synthesised sound effects (no audio files). */
+const sfx = {
+  ctx: null,
+  on: localStorage.getItem("hg-sfx") !== "0",
+  ac() {
+    if (!this.on) return null;
+    if (!this.ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      this.ctx = new C();
+      // Master bus: boost effects so they cut through the music, with a compressor to stop clipping.
+      const comp = this.ctx.createDynamicsCompressor();
+      comp.threshold.value = -12;
+      comp.ratio.value = 6;
+      this.out = this.ctx.createGain();
+      this.out.gain.value = 2.2;
+      this.out.connect(comp).connect(this.ctx.destination);
+    }
+    if (this.ctx.state === "suspended") this.ctx.resume();
+    return this.ctx;
+  },
+  tone(freq, dur, { type = "sine", vol = 0.16, delay = 0, to = 0 } = {}) {
+    const c = this.ac();
+    if (!c) return;
+    const t = c.currentTime + delay;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(this.out);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  },
+  noise(dur, { vol = 0.2, freq = 1200, delay = 0 } = {}) {
+    const c = this.ac();
+    if (!c) return;
+    const t = c.currentTime + delay;
+    const buf = c.createBuffer(1, Math.max(1, Math.floor(c.sampleRate * dur)), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const f = c.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = freq;
+    const g = c.createGain();
+    g.gain.value = vol;
+    src.connect(f).connect(g).connect(this.out);
+    src.start(t);
+  },
+  tick() { this.tone(640, 0.05, { type: "square", vol: 0.05 }); },
+  hop() { this.tone(300, 0.12, { type: "triangle", vol: 0.14, to: 520 }); },
+  gain() { [523, 659, 784].forEach((f, i) => this.tone(f, 0.16, { type: "triangle", delay: i * 0.08 })); },
+  loss() { this.tone(330, 0.5, { type: "sawtooth", vol: 0.1, to: 120 }); },
+  roar() {
+    this.tone(150, 0.7, { type: "sawtooth", vol: 0.16, to: 55 });
+    this.tone(110, 0.7, { type: "square", vol: 0.08, to: 45 });
+    this.noise(0.5, { vol: 0.12, freq: 400 });
+  },
+  splash() { this.noise(0.45, { vol: 0.25, freq: 2200 }); },
+  throw() { this.noise(0.25, { vol: 0.12, freq: 3000 }); this.tone(900, 0.2, { type: "sine", vol: 0.06, to: 300 }); },
+  thud() { this.tone(130, 0.25, { vol: 0.3, to: 40 }); },
+  fanfare() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.28, { type: "square", vol: 0.07, delay: i * 0.12 })); },
+  syncBtn() {
+    const b = $("btn-sound");
+    if (!b) return;
+    b.textContent = this.on ? "Sound: On" : "Sound: Off";
+    b.setAttribute("aria-pressed", this.on ? "true" : "false");
+  },
+  toggle() {
+    this.on = !this.on;
+    localStorage.setItem("hg-sfx", this.on ? "1" : "0");
+    this.syncBtn();
+    if (this.on) this.gain();
+  }
+};
+
+function shake() {
+  if (reducedMotion()) return;
+  const el = $("play-screen");
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
+  setTimeout(() => el.classList.remove("shake"), 600);
+}
+
+function confetti(n = 70) {
+  if (reducedMotion()) return;
+  const colors = ["#f2c14e", "#d9783a", "#6b8f71", "#6fa0c8", "#e58a7d", "#fff8ef"];
+  const layer = document.createElement("div");
+  layer.className = "confetti-layer";
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement("span");
+    c.className = "confetti";
+    c.style.left = `${Math.random() * 100}%`;
+    c.style.background = colors[i % colors.length];
+    c.style.setProperty("--dx", `${Math.round(Math.random() * 240 - 120)}px`);
+    c.style.animationDuration = `${1.6 + Math.random() * 1.4}s`;
+    c.style.animationDelay = `${Math.random() * 0.4}s`;
+    layer.appendChild(c);
+  }
+  document.body.appendChild(layer);
+  setTimeout(() => layer.remove(), 3600);
+}
 
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -919,7 +1249,7 @@ const music = {
     this.audio = new Audio(src);
     this.audio.loop = true;
     this.audio.preload = "auto";
-    this.audio.volume = 0.5;
+    this.audio.volume = 0.25;
     this.on = localStorage.getItem("hg-music") === "1";
     this.syncBtn();
     if (this.on) this.play();
@@ -936,7 +1266,23 @@ const music = {
     localStorage.setItem("hg-music", "1");
     this.syncBtn();
     const p = this.audio.play();
-    if (p && p.catch) p.catch(() => {});
+    if (p && p.catch) p.catch(() => this.retryOnGesture());
+  },
+  /** Browsers block autoplay; start the music on the first click or key press instead. */
+  retryOnGesture() {
+    if (this.waiting) return;
+    this.waiting = true;
+    const go = () => {
+      document.removeEventListener("pointerdown", go, true);
+      document.removeEventListener("keydown", go, true);
+      this.waiting = false;
+      if (this.on && this.audio && this.audio.paused) {
+        const p = this.audio.play();
+        if (p && p.catch) p.catch(() => {});
+      }
+    };
+    document.addEventListener("pointerdown", go, true);
+    document.addEventListener("keydown", go, true);
   },
   stop() {
     this.on = false;
@@ -1003,6 +1349,7 @@ async function animateDockDice(diceEl, finalValue) {
     let n = 1 + Math.floor(Math.random() * 6);
     if (n === last) n = (n % 6) + 1;
     last = n;
+    sfx.tick();
     setDiceFace(diceEl, n);
     diceEl.classList.remove("dice-tick", "dice-land");
     void diceEl.offsetWidth;
@@ -1020,7 +1367,7 @@ async function animateDockDice(diceEl, finalValue) {
 }
 
 /** Turn / dice / outcome UI — lives in the top-middle dock (no bordered popup). */
-function showTurnDock({ title, body, hero, dice, actions, cardStyle, animateDice }) {
+function showTurnDock({ title, body, hero, dice, actions, cardStyle, animateDice, extra }) {
   const shouldAnimate = animateDice && dice != null;
   return new Promise(resolve => {
     const dock = $("turn-dock");
@@ -1031,6 +1378,9 @@ function showTurnDock({ title, body, hero, dice, actions, cardStyle, animateDice
       ? `<img class="dock-hero" src="${asset(hero)}" alt="" />`
       : "";
     const bodyText = shouldAnimate ? "Rolling…" : (body || "");
+    const extraHtml = extra
+      ? `${extra.silly ? `<p class="dock-silly">${esc(extra.silly)}</p>` : ""}${extra.fact ? `<p class="dock-fact">💡 Did you know? ${esc(extra.fact)}</p>` : ""}`
+      : "";
     dock.innerHTML = `
       <div class="dock-inner">
         ${heroHtml}
@@ -1038,6 +1388,7 @@ function showTurnDock({ title, body, hero, dice, actions, cardStyle, animateDice
           <div class="dock-copy ${cardStyle ? "card-mode" : ""}">
             <h3>${title || ""}</h3>
             <p>${bodyText.replace(/</g, "&lt;")}</p>
+            ${extraHtml}
           </div>
           ${diceHtml}
           <div class="dock-actions" id="dock-actions"></div>
@@ -1322,6 +1673,11 @@ function renderBoard() {
   </div>`;
 }
 
+function seatBadgesHtml(p) {
+  if (!p.streak) return "";
+  return `<div class="seat-badges"><div class="seat-streak">🔥 Streak ${p.streak}/3</div></div>`;
+}
+
 function renderSeats() {
   for (let i = 0; i < 4; i++) {
     const el = $(`seat-${i}`);
@@ -1337,6 +1693,7 @@ function renderSeats() {
     el.innerHTML = `
       <div class="avatar-wrap">
         <img class="avatar" src="${asset(p.character.img)}" alt="${p.character.name}" />
+        ${seatBadgesHtml(p)}
       </div>
       <div class="seat-role">${p.character.name}</div>
       <div class="food-count">${foodCount(p)} food</div>
@@ -1357,6 +1714,11 @@ function beginGame() {
   state.current = 0;
   state.busy = false;
   refillDeck();
+  state.players.forEach(p => {
+    p.streak = 0;
+    p.first = false;
+    p.stats = newStats();
+  });
   showScreen("play-screen");
   renderBoard();
   renderSeats();
@@ -1375,6 +1737,7 @@ function markFinished(p) {
   if (!p) return;
   if (p.pos >= BOARD.length - 1) {
     p.pos = BOARD.length - 1;
+    if (!p.finished && !state.players.some(o => o.first)) p.first = true;
     p.finished = true;
     p.skip = 0;
   }
@@ -1411,6 +1774,7 @@ async function animateAlong(player, path) {
   state.hoppingId = player.id;
   for (const pos of path) {
     player.pos = pos;
+    sfx.hop();
     renderBoard();
     renderSeats();
     const el = document.querySelector(`.token-slot[data-path="${pos}"]`);
@@ -1457,12 +1821,14 @@ function gainFood(player, n) {
   if (n <= 0) return;
   for (let i = 0; i < n; i++) player.food.push(randomFoodEmoji());
   queueFoodDelta(player.id, n);
+  sfx.gain();
 }
 
 function loseFood(player, n) {
   const lost = Math.min(player.food.length, n);
   player.food.splice(0, lost);
   queueFoodDelta(player.id, -lost);
+  if (lost > 0) sfx.loss();
   return lost;
 }
 
@@ -1569,8 +1935,8 @@ async function applyEffect(player, effect) {
     const roll = 1 + Math.floor(Math.random() * 6);
     const odd = roll % 2 === 1;
     await openModal({
-      title: odd ? `Odd — ${roll}` : `Even — ${roll}`,
-      body: odd ? "Odd roll." : "Even roll.",
+      title: "Odd or even?",
+      body: `Rolled ${roll} — ${odd ? "odd" : "even"}.${effect.oddEven.say ? "\n" + effect.oddEven.say[odd ? "odd" : "even"] : ""}`,
       dice: roll,
       icon: "icon_dice"
     });
@@ -1600,19 +1966,10 @@ async function applyEffect(player, effect) {
       renderSeats();
     }
   }
-  if (effect.river) {
-    const roll = 1 + Math.floor(Math.random() * 6);
-    const odd = roll % 2 === 1;
-    await openModal({
-      title: "RIVER CROSSING",
-      body: odd
-        ? `Rolled ${roll} (odd) — lose your turn`
-        : `Rolled ${roll} (even) — roll the dice twice`,
-      dice: roll,
-      icon: "icon_dice"
-    });
-    if (odd) player.skip += 1;
-    else bonusRolls += 1;
+  if (effect.game) {
+    const rating = await playMiniGame(effect.game, player);
+    const nested = await applyEffect(player, MINI[effect.game].out[rating]);
+    bonusRolls += nested.bonusRolls || 0;
   }
 
   renderSeats();
@@ -1625,6 +1982,8 @@ async function movePlayer(player, steps) {
   await animateAlong(player, path);
   if (player.pos >= BOARD.length - 1) {
     markFinished(player);
+    sfx.fanfare();
+    confetti(40);
     await showTurnDock({
       title: "You made it!",
       body: `${player.name} reached END!`,
@@ -1648,17 +2007,293 @@ function playOutcomeBurst(player, imgKey) {
   return () => img.remove();
 }
 
+/* ---------- Mini-games ---------- */
+function miniShow(title, help) {
+  $("mini-title").textContent = title;
+  $("mini-help").textContent = help;
+  $("mini-stage").innerHTML = "";
+  $("mini-actions").innerHTML = "";
+  $("mini").classList.add("show");
+}
+
+function miniClose() {
+  $("mini").classList.remove("show");
+  $("mini-stage").innerHTML = "";
+  $("mini-actions").innerHTML = "";
+}
+
+function miniButton(label) {
+  return new Promise(resolve => {
+    const box = $("mini-actions");
+    box.innerHTML = "";
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn-primary mini-big";
+    b.textContent = label;
+    b.onclick = () => resolve();
+    box.appendChild(b);
+    b.focus();
+  });
+}
+
+/** Mammoth hunt: stop the moving marker inside the zone. */
+async function gameTiming() {
+  const stage = $("mini-stage");
+  const center = 25 + Math.random() * 50;
+  stage.innerHTML = `<div class="tbar">
+    <div class="tzone ok" style="left:${center - 18}%;width:36%"></div>
+    <div class="tzone great" style="left:${center - 6}%;width:12%"></div>
+    <div class="tmark"></div></div>`;
+  const mark = stage.querySelector(".tmark");
+  const t0 = performance.now();
+  let x = 0;
+  let raf = 0;
+  const loop = (t) => {
+    const ph = ((t - t0) / 1400) % 2;
+    x = ph < 1 ? ph : 2 - ph;
+    mark.style.left = `${x * 100}%`;
+    raf = requestAnimationFrame(loop);
+  };
+  raf = requestAnimationFrame(loop);
+  await miniButton("🗡️ THROW!");
+  cancelAnimationFrame(raf);
+  sfx.throw();
+  const off = Math.abs(x * 100 - center);
+  return off <= 6 ? "great" : off <= 18 ? "ok" : "miss";
+}
+
+/** River crossing: memorise the safe stones, then hop across. */
+async function gameStones() {
+  const ROWS = 5, COLS = 5;
+  // Each safe stone is at most one column away from the one below it.
+  const safe = [Math.floor(Math.random() * COLS)];
+  for (let r = 1; r < ROWS; r++) {
+    const prev = safe[r - 1];
+    const options = [prev - 1, prev, prev + 1].filter(c => c >= 0 && c < COLS);
+    safe.push(options[Math.floor(Math.random() * options.length)]);
+  }
+  const stage = $("mini-stage");
+  stage.innerHTML = `<div class="stones">${Array.from({ length: ROWS }, (_, r) =>
+    `<div class="srow">${Array.from({ length: COLS }, (_, c) =>
+      `<button type="button" class="stone" data-r="${r}" data-c="${c}" disabled>🪨</button>`).join("")}</div>`).join("")}</div>`;
+  const stones = [...stage.querySelectorAll(".stone")];
+  const at = (r, c) => stage.querySelector(`.stone[data-r="${r}"][data-c="${c}"]`);
+  safe.forEach((c, r) => at(r, c).classList.add("glow"));
+  for (let n = 5; n > 0; n--) {
+    $("mini-help").textContent = `Memorize the green stones! ${n}…`;
+    await sleep(850);
+  }
+  stones.forEach(st => st.classList.remove("glow"));
+  $("mini-help").textContent = "Now hop across! Start with the bottom row.";
+  return new Promise(resolve => {
+    let row = 0;
+    const enable = () => stones.forEach(st => { st.disabled = Number(st.dataset.r) !== row; });
+    enable();
+    stones.forEach(st => {
+      st.onclick = () => {
+        const r = Number(st.dataset.r), c = Number(st.dataset.c);
+        stones.forEach(x => { x.disabled = true; });
+        if (safe[r] === c) {
+          st.classList.add("ok");
+          st.textContent = "🐸";
+          sfx.hop();
+          row++;
+          if (row >= ROWS) sleep(450).then(() => resolve("great"));
+          else enable();
+        } else {
+          st.classList.add("bad");
+          st.textContent = "💦";
+          sfx.splash();
+          at(r, safe[r]).classList.add("glow");
+          sleep(1100).then(() => resolve("miss"));
+        }
+      };
+    });
+  });
+}
+
+/** Saber-tooth attack: tap fast before time runs out. */
+function gameTap() {
+  const GOAL = 14, MS = 4000;
+  const stage = $("mini-stage");
+  stage.innerHTML = `<div class="tapmeter"><div class="tapfill"></div></div>
+    <div class="tapclock"></div>
+    <div class="tapinfo">0 / ${GOAL}</div>`;
+  const fill = stage.querySelector(".tapfill");
+  const clock = stage.querySelector(".tapclock");
+  const info = stage.querySelector(".tapinfo");
+  sfx.roar();
+  return new Promise(resolve => {
+    let taps = 0, timer = 0, t0 = 0, done = false;
+    const box = $("mini-actions");
+    box.innerHTML = "";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-primary mini-big";
+    btn.textContent = "💥 SCARE IT! 💥";
+    const finish = (ok) => {
+      if (done) return;
+      done = true;
+      clearInterval(timer);
+      btn.disabled = true;
+      setTimeout(() => resolve(ok ? "great" : "miss"), 500);
+    };
+    btn.onclick = () => {
+      if (done) return;
+      if (!t0) {
+        t0 = performance.now();
+        timer = setInterval(() => {
+          const left = Math.max(0, MS - (performance.now() - t0));
+          clock.style.width = `${(left / MS) * 100}%`;
+          if (left <= 0) finish(false);
+        }, 40);
+      }
+      taps++;
+      sfx.tick();
+      fill.style.width = `${Math.min(100, (taps / GOAL) * 100)}%`;
+      info.textContent = `${taps} / ${GOAL}`;
+      if (taps >= GOAL) finish(true);
+    };
+    box.appendChild(btn);
+    btn.focus();
+  });
+}
+
+const MINI = {
+  mammoth: {
+    title: "🦣 Mammoth Hunt!",
+    help: "Stop the spear in the green zone. Gold is a bullseye!",
+    run: gameTiming,
+    msg: {
+      great: "BULLSEYE! The mammoth is yours. +3 food!",
+      ok: "A hit! You grabbed some meat. +1 food.",
+      miss: "Missed! The mammoth wandered off."
+    },
+    out: { great: { gain: 3 }, ok: { gain: 1 }, miss: {} }
+  },
+  river: {
+    title: "🌊 River Crossing!",
+    help: "Memorize the safe stones!",
+    run: gameStones,
+    msg: {
+      great: "You made it across! Roll the dice twice.",
+      miss: "SPLASH! You lose your next turn."
+    },
+    out: { great: { bonusRolls: 1 }, miss: { skipNext: true } }
+  },
+  tiger: {
+    title: "🐯 Saber-Tooth Attack!",
+    help: "Tap SCARE IT as fast as you can! The timer starts on your first tap.",
+    run: gameTap,
+    msg: {
+      great: "It ran away! You're safe.",
+      miss: "It caught you! Skip your next turn."
+    },
+    out: { great: {}, miss: { skip: 1 } }
+  }
+};
+
+async function playMiniGame(kind, player) {
+  const g = MINI[kind];
+  miniShow(g.title, g.help);
+  const rating = await g.run();
+  const win = rating !== "miss";
+  if (win) {
+    player.stats.wins++;
+    if (kind === "mammoth" && rating === "great") player.stats.mammoth = true;
+    if (kind === "river") player.stats.river = true;
+    if (kind === "tiger") player.stats.tiger = true;
+    if (rating === "great") { confetti(50); sfx.fanfare(); }
+    else sfx.gain();
+  } else {
+    sfx.loss();
+    shake();
+  }
+  $("mini-help").textContent = g.msg[rating];
+  await miniButton("Continue");
+  miniClose();
+  return rating;
+}
+
+/* ---------- Badges ---------- */
+function badgesFor(player) {
+  const s = player.stats;
+  const out = [];
+  if (s.mammoth) out.push("🦣 Mammoth Master");
+  if (s.river) out.push("🪨 River Hopper");
+  if (s.tiger) out.push("🐯 Tiger Tamer");
+  if (s.streakBonuses > 0) out.push("🔥 Lucky Forager");
+  if (s.risky >= 2) out.push("🎲 Brave Gambler");
+  if (player.first) out.push("🏁 Trail Blazer");
+  const most = Math.max(...state.players.map(p => p.stats.disasters));
+  const unluckiest = state.players.filter(p => p.stats.disasters === most);
+  if (most >= 3 && unluckiest.length === 1 && unluckiest[0] === player) out.push("😅 Unluckiest Hunter");
+  if (!out.length) out.push("🧭 Brave Explorer");
+  return out;
+}
+
 async function showOutcome(player) {
   const card = drawCard();
   const clearBurst = playOutcomeBurst(player, card.img);
-  await showTurnDock({
-    title: card.name,
-    body: outcomeBody(card, player),
-    cardStyle: true,
-    actions: [{ label: "OK", value: true }]
-  });
-  clearBurst();
-  return applyEffect(player, card.effect);
+  const before = foodCount(player);
+  const skipBefore = player.skip;
+  const extra = { silly: card.silly || SILLY[card.img], fact: card.fact || factFor(card) };
+  if (card.img === "card_saber_tooth" || card.img === "card_bear") sfx.roar();
+  else if (card.img === "card_river") sfx.splash();
+
+  let effect = card.effect;
+  if (effect?.choice) {
+    const options = effect.choice;
+    const pick = await showTurnDock({
+      title: card.name,
+      body: card.text,
+      cardStyle: true,
+      extra,
+      actions: options.map((o, i) => ({ label: o.label, value: i, secondary: i > 0 }))
+    });
+    clearBurst();
+    if (options[pick].risky) player.stats.risky++;
+    effect = options[pick].effect;
+  } else {
+    await showTurnDock({
+      title: card.name,
+      body: outcomeBody(card, player),
+      cardStyle: true,
+      extra,
+      actions: [{ label: "OK", value: true }]
+    });
+    clearBurst();
+  }
+
+  const result = await applyEffect(player, effect);
+
+  const s = player.stats;
+  const net = foodCount(player) - before;
+  const hurt = net < 0 || player.skip > skipBefore;
+  if (hurt) {
+    s.disasters++;
+    player.streak = 0;
+    shake();
+  } else if (net > 0) {
+    player.streak++;
+    if (net >= 3 && !effect?.game) { confetti(50); sfx.fanfare(); }
+  }
+  if (player.streak >= 3) {
+    player.streak = 0;
+    s.streakBonuses++;
+    gainFood(player, 1);
+    confetti(70);
+    sfx.fanfare();
+    renderSeats();
+    await showTurnDock({
+      title: "🔥 HUNT STREAK!",
+      body: "3 good finds in a row!\nBonus +1 food.",
+      hero: player.character.img,
+      actions: [{ label: "Nice!", value: true }]
+    });
+  }
+  renderSeats();
+  return result;
 }
 
 async function doRollAndMove(player) {
@@ -1763,6 +2398,8 @@ function endGame() {
   const ranked = state.players.slice().sort((a, b) => foodCount(b) - foodCount(a));
   const top = ranked[0] ? foodCount(ranked[0]) : 0;
   const winners = ranked.filter(p => foodCount(p) === top && top > 0);
+  sfx.fanfare();
+  confetti(80);
   $("end-title").textContent = top === 0 ? "Camp is Quiet" : (winners.length > 1 ? "Shared Feast!" : "Most Food Wins!");
   $("end-msg").textContent = top === 0
     ? "Everyone finished, but nobody gathered food."
@@ -1775,6 +2412,7 @@ function endGame() {
       <div>
         <div class="name" style="font-weight:800">${p.name} · ${p.character.name}</div>
         <div class="meta" style="font-size:.85rem;color:#6d563d">${p.food.join("") || "no food"} · ${foodCount(p)} food</div>
+        <div class="badge-row">${badgesFor(p).map(b => `<span class="badge-chip">${esc(b)}</span>`).join("")}</div>
       </div>
       <div>${winners.includes(p) && top > 0 ? `<span class="won-tag">Winner</span>` : ""}</div>
     </div>`).join("");
@@ -1786,16 +2424,12 @@ $("btn-choose").onclick = confirmChoose;
 $("player-count").onchange = resetParty;
 $("btn-begin").onclick = tryBeginGame;
 $("btn-replay").onclick = () => { showScreen("title-screen"); };
-$("btn-how").onclick = () => openModal({
-  title: "How to Play",
-  body: "On your turn, a pop-up shows your character — roll the dice there, then your token hops space by space along the U-shaped trail. After you move, you draw an experience card and follow it. Food shows as emojis by your avatar. When everyone reaches END, most food wins. The computer is the banker.",
-  icon: "icon_dice",
-  turnStyle: true
-});
 $("btn-music").onclick = () => music.toggle();
+$("btn-sound").onclick = () => sfx.toggle();
 
 initArt();
 music.init();
+sfx.syncBtn();
 randomShowcase(true);
 resetParty();
 </script>
