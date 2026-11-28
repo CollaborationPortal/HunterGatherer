@@ -1,6 +1,6 @@
-    cd ~/HunterGatherer
+    cd ~/HistoryGames/HunterGatherer
     python3 apps-script/build.py
-    pbcopy < ~/HunterGatherer/apps-script/Index.html
+    pbcopy < ~/HistoryGames/HunterGatherer/apps-script/Index.html
 
 1. Deploy > Manage deployments.
 2. Click the pencil (edit) icon on the existing web app deployment.
